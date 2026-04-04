@@ -1,12 +1,27 @@
-<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{background:#0b0e14;color:#fff;font-family:sans-serif;text-align:center;} input, button {width:90%; padding:15px; margin:10px; border-radius:10px; border:none; font-size:1rem;}</style></head><body>
-<h2>Join Quiz</h2><input type="text" id="r" placeholder="Room Code"><input type="text" id="t" placeholder="Team Name">
-<button onclick="join()" style="background:#6200ee;color:white;font-weight:bold;">JOIN QUIZ</button>
-<script>
-let ws;
-function join() {
-    const r = document.getElementById('r').value, t = document.getElementById('t').value;
-    ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${t}`);
-    ws.onmessage = (e) => { alert("Question Received!"); };
-    alert("Connected! Wait for Master to start.");
-}
-</script></body></html>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #0b0e14; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        input { width: 80%; padding: 15px; margin: 10px; border-radius: 8px; border: none; font-size: 1rem; }
+        button { width: 80%; padding: 15px; background: #6200ee; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <h2>Join the Quiz</h2>
+    <input type="text" id="r" placeholder="4-Digit Room Code">
+    <input type="text" id="t" placeholder="Your Team Name">
+    <button onclick="join()">JOIN GAME</button>
+
+    <script>
+        function join() {
+            const r = document.getElementById('r').value;
+            const t = document.getElementById('t').value;
+            const ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${t}`);
+            ws.onopen = () => alert("You are in! Wait for the first question.");
+            ws.onmessage = (e) => { alert("New Question Received!"); };
+        }
+    </script>
+</body>
+</html>
