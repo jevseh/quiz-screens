@@ -1,45 +1,56 @@
-import random, string, json
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quizmaster Hub</title>
+    <style>
+        body { background: #0b0e14; color: #adbac7; font-family: sans-serif; text-align: center; padding: 50px; }
+        .card { background: #1c2128; padding: 30px; border-radius: 15px; border: 1px solid #444; display: inline-block; min-width: 300px; }
+        #timer { font-size: 5rem; color: #00e676; margin: 20px 0; }
+        button { padding: 15px 30px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; margin: 10px; font-size: 1.1rem; }
+        .btn-start { background: #238636; }
+        .btn-load { background: #444; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 id="code">ROOM: ----</h1>
+        <div id="timer">30</div>
+        <button class="btn-start" onclick="start()">🚀 START CLOCK</button><br>
+        <button class="btn-load" onclick="document.getElementById('csv').click()">📁 UPLOAD CSV</button>
+        <input type="file" id="csv" style="display:none">
+    </div>
 
-app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    <script>
+        let ws, room;
+        async function init() {
+            // Wake up the brain
+            const res = await fetch('https://my-pub-quiz.onrender.com/create-room');
+            const data = await res.json();
+            room = data.room_code;
+            document.getElementById('code').innerText = "ROOM: " + room;
 
-rooms = {}
+            // Open the live connection
+            ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${room}/master/M`);
+        }
 
-@app.get("/create-room")
-async def create_room():
-    code = "".join(random.choices(string.digits, k=4))
-    rooms[code] = {"master": None, "teams": {}, "q_list": [], "q_idx": 0, "pts": 10, "pen": 0, "f_done": False}
-    return {"room_code": code}
+        function start() {
+            ws.send(JSON.stringify({type: "START", pts: 10, pen: 0}));
+        }
 
-@app.websocket("/ws/{room}/{role}/{name}")
-async def websocket_endpoint(websocket: WebSocket, room: str, role: str, name: str):
-    await websocket.accept()
-    if room not in rooms: return await websocket.close()
-    r = rooms[room]
-    if role == "master": r["master"] = websocket
-    else: r["teams"][name] = {"ws": websocket, "score": 0, "hist": []}
-
-    try:
-        while True:
-            data = await websocket.receive_json()
-            if role == "master":
-                if data["type"] == "LOAD": r["q_list"] = data["payload"]
-                if data["type"] == "START":
-                    r.update({"f_done": False, "pts": data["pts"], "pen": data["pen"]})
-                    for t in r["teams"].values(): 
-                        await t["ws"].send_json({"type": "NEW_Q", "q": r["q_list"][r["q_idx"]]})
-                if data["type"] == "REVEAL":
-                    for t in r["teams"].values(): await t["ws"].send_json({"type": "REV", "ans": r["q_list"][r["q_idx"]]["correct"]})
-                if data["type"] == "NEXT": r["q_idx"] += 1
-            else:
-                t = r["teams"][name]
-                is_c = str(data["ans"]).strip().upper() == str(r["q_list"][r["q_idx"]]["correct"]).strip().upper()
-                t["score"] += int(r["pts"]) if is_c else int(r["pen"])
-                t["hist"].append({"q": r["q_idx"]+1, "ans": data["ans"], "is_c": is_c})
-                if is_c and not r["f_done"]:
-                    r["f_done"] = True
-                    await r["master"].send_json({"type": "BEEP", "url": data["buzzer"]})
-                await r["master"].send_json({"type": "UP", "teams": {k: {"s": v["score"], "h": v["hist"]} for k,v in r["teams"].items()}})
-    except WebSocketDisconnect: pass
+        document.getElementById('csv').onchange = (e) => {
+            const r = new FileReader();
+            r.onload = (ev) => {
+                const rows = ev.target.result.split('\n').slice(1);
+                const pk = rows.map(line => {
+                    const c = line.split(',');
+                    return {title:c[0], type:c[1], correct:c[2], pts:c[3], pen:c[4], med:c[5], choices: [c[6],c[7],c[8],c[9]].join('|')};
+                });
+                ws.send(JSON.stringify({type: "LOAD", payload: pk}));
+                alert("Quiz Loaded!");
+            };
+            r.readAsText(e.target.files[0]);
+        };
+        init();
+    </script>
+</body>
+</html>
