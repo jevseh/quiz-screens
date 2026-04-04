@@ -1,26 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { background: #0b0e14; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        input { width: 80%; padding: 15px; margin: 10px; border-radius: 8px; border: none; font-size: 1rem; }
-        button { width: 80%; padding: 15px; background: #6200ee; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
+        body { background: #0b0e14; color: #fff; font-family: sans-serif; text-align: center; padding: 15px; margin: 0; }
+        .hidden { display: none; }
+        input, button { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: none; font-size: 1.1rem; box-sizing: border-box; }
+        button { background: #6200ee; color: white; font-weight: bold; cursor: pointer; }
+        .q-card { background: #1c2128; padding: 20px; border-radius: 15px; border: 2px solid #333; min-height: 200px; margin-top: 10px; }
+        .btn-box { background: #2d333b; padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid transparent; text-align: left; cursor: pointer; }
+        .selected { border-color: #bb86fc; background: #352b45; }
+        #ans-input { font-size: 2rem; text-align: center; background: #000; color: #00e676; }
     </style>
 </head>
 <body>
-    <h2>Join the Quiz</h2>
-    <input type="text" id="r" placeholder="4-Digit Room Code">
-    <input type="text" id="t" placeholder="Your Team Name">
-    <button onclick="join()">JOIN GAME</button>
+    <div id="setup">
+        <h2>Join Quiz</h2>
+        <input type="text" id="r" placeholder="4-Digit Code">
+        <input type="text" id="t" placeholder="Team Name">
+        <button onclick="join()">JOIN GAME</button>
+    </div>
+
+    <div id="game" class="hidden">
+        <div id="q-area" class="q-card"></div>
+        <button id="sub-btn" onclick="sendAns()">SUBMIT ANSWER</button>
+    </div>
 
     <script>
+        let ws, qType, curAns = "";
+
         function join() {
             const r = document.getElementById('r').value;
             const t = document.getElementById('t').value;
-            const ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${t}`);
-            ws.onopen = () => alert("You are in! Wait for the first question.");
-            ws.onmessage = (e) => { alert("New Question Received!"); };
+            ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${t}`);
+            
+            ws.onmessage = (e) => {
+                const m = JSON.parse(e.data);
+                if(m.type === "NEW_Q") render(m.q);
+                if(m.type === "REV") document.getElementById('q-area').innerHTML = `<h1>ANSWER: ${m.ans}</h1>`;
+            };
+
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+        }
+
+        function render(q) {
+            qType = q.type; curAns = "";
+            let h = `<h3>${q.title}</h3>`;
+            if(q.med && q.med.includes('http')) h = `<img src="${q.med}" style="width:100%; border-radius:10px;"><br>` + h;
+            
+            if(qType === 'math' || qType === 'letter') {
+                h += `<input type="text" id="ans-input" placeholder="Type here...">`;
+            } else {
+                q.choices.split('|').forEach((c, i) => {
+                    if(c.trim() !== "" && c !== "undefined") {
+                        const L = String.fromCharCode(65+i);
+                        h += `<div class="btn-box" onclick="tap(this,'${L}')"><b>${L}:</b> ${c}</div>`;
+                    }
+                });
+            }
+            document.getElementById('q-area').innerHTML = h;
+            document.getElementById('sub-btn').innerText = "SUBMIT ANSWER";
+        }
+
+        function tap(el, L) {
+            if(qType === 'multi') {
+                el.classList.toggle('selected');
+                curAns = Array.from(document.querySelectorAll('.selected')).map(e => e.innerText[0]).sort().join('');
+            } else {
+                document.querySelectorAll('.btn-box').forEach(b => b.classList.remove('selected'));
+                el.classList.add('selected');
+                curAns = L;
+            }
+        }
+
+        function sendAns() {
+            let a = curAns;
+            if(qType === 'math' || qType === 'letter') a = document.getElementById('ans-input').value;
+            ws.send(JSON.stringify({ans: a.toUpperCase(), buzzer: ""}));
+            document.getElementById('sub-btn').innerText = "SENT!";
         }
     </script>
 </body>
