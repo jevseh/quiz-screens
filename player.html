@@ -1,0 +1,12 @@
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{background:#0b0e14;color:#fff;font-family:sans-serif;text-align:center;} input, button {width:90%; padding:15px; margin:10px; border-radius:10px; border:none; font-size:1rem;}</style></head><body>
+<h2>Join Quiz</h2><input type="text" id="r" placeholder="Room Code"><input type="text" id="t" placeholder="Team Name">
+<button onclick="join()" style="background:#6200ee;color:white;font-weight:bold;">JOIN QUIZ</button>
+<script>
+let ws;
+function join() {
+    const r = document.getElementById('r').value, t = document.getElementById('t').value;
+    ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${t}`);
+    ws.onmessage = (e) => { alert("Question Received!"); };
+    alert("Connected! Wait for Master to start.");
+}
+</script></body></html>
