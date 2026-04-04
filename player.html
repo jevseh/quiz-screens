@@ -5,41 +5,56 @@
     <style>
         body { background: #0b0e14; color: #fff; font-family: sans-serif; text-align: center; padding: 15px; margin: 0; }
         .hidden { display: none; }
-        input, button { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: none; font-size: 1.1rem; box-sizing: border-box; }
+        input, select, button { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: none; font-size: 1.1rem; box-sizing: border-box; }
         button { background: #6200ee; color: white; font-weight: bold; cursor: pointer; }
-        .q-card { background: #1c2128; padding: 20px; border-radius: 15px; border: 2px solid #333; min-height: 200px; margin-top: 10px; }
-        .btn-box { background: #2d333b; padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid transparent; text-align: left; cursor: pointer; }
+        .q-card { background: #1c2128; padding: 20px; border-radius: 15px; border: 2px solid #333; min-height: 250px; margin-top: 10px; }
+        .btn-box { background: #2d333b; padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid transparent; text-align: left; display: flex; justify-content: space-between; }
         .selected { border-color: #bb86fc; background: #352b45; }
-        #ans-input { font-size: 2rem; text-align: center; background: #000; color: #00e676; }
+        .rank { color: #00e676; font-weight: bold; }
+        #ans-in { font-size: 2rem; text-align: center; color: #00e676; background: #000; }
     </style>
 </head>
 <body>
     <div id="setup">
-        <h2>Join Quiz</h2>
-        <input type="text" id="r" placeholder="4-Digit Code">
+        <h2 style="color: #6200ee;">Pub Quiz Join</h2>
+        <input type="text" id="r" placeholder="4-Digit Room Code" inputmode="numeric">
         <input type="text" id="t" placeholder="Team Name">
+        <label style="font-size: 0.8rem; color: #888;">Pick your buzzer sound:</label>
+        <select id="bz">
+            <option value="https://actions.google.com/sounds/v1/alarms/air_horn.ogg">Air Horn</option>
+            <option value="https://actions.google.com/sounds/v1/emergency/beep_warning.ogg">Beep Beep</option>
+            <option value="https://actions.google.com/sounds/v1/cartoon/clown_horn.ogg">Clown Horn</option>
+        </select>
         <button onclick="join()">JOIN GAME</button>
     </div>
 
     <div id="game" class="hidden">
-        <div id="q-area" class="q-card"></div>
-        <button id="sub-btn" onclick="sendAns()">SUBMIT ANSWER</button>
+        <div id="q-area" class="q-card">
+            <h3>Waiting for the host...</h3>
+        </div>
+        <button id="sub-btn" onclick="send()">SUBMIT ANSWER</button>
     </div>
 
     <script>
         let ws, qType, curAns = "";
 
-        function join() {
+        async function join() {
+            // Keep phone screen on
+            if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch (err) {} }
+            
             const r = document.getElementById('r').value;
             const t = document.getElementById('t').value;
+            if(!r || !t) return alert("Enter Code and Team Name!");
+
             ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${t}`);
             
             ws.onmessage = (e) => {
                 const m = JSON.parse(e.data);
                 if(m.type === "NEW_Q") render(m.q);
-                if(m.type === "REV") document.getElementById('q-area').innerHTML = `<h1>ANSWER: ${m.ans}</h1>`;
+                if(m.type === "REV") {
+                    document.getElementById('q-area').innerHTML = `<h3>Answer was:</h3><h1>${m.ans}</h1>`;
+                }
             };
-
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
         }
@@ -47,38 +62,43 @@
         function render(q) {
             qType = q.type; curAns = "";
             let h = `<h3>${q.title}</h3>`;
-            if(q.med && q.med.includes('http')) h = `<img src="${q.med}" style="width:100%; border-radius:10px;"><br>` + h;
+            if(q.med && q.med.includes('http')) h = `<img src="${q.med}" style="width:100%; border-radius:10px; margin-bottom:10px;">` + h;
             
             if(qType === 'math' || qType === 'letter') {
-                h += `<input type="text" id="ans-input" placeholder="Type here...">`;
+                h += `<input type="text" id="ans-in" placeholder="..." autofocus>`;
             } else {
                 q.choices.split('|').forEach((c, i) => {
                     if(c.trim() !== "" && c !== "undefined") {
                         const L = String.fromCharCode(65+i);
-                        h += `<div class="btn-box" onclick="tap(this,'${L}')"><b>${L}:</b> ${c}</div>`;
+                        h += `<div class="btn-box" onclick="tap(this,'${L}')"><span>${L}: ${c}</span><span class="rank"></span></div>`;
                     }
                 });
             }
             document.getElementById('q-area').innerHTML = h;
             document.getElementById('sub-btn').innerText = "SUBMIT ANSWER";
+            document.getElementById('sub-btn').style.background = "#6200ee";
         }
 
         function tap(el, L) {
             if(qType === 'multi') {
                 el.classList.toggle('selected');
                 curAns = Array.from(document.querySelectorAll('.selected')).map(e => e.innerText[0]).sort().join('');
+            } else if(qType === 'sequence') {
+                if(curAns.includes(L)) { curAns = ""; document.querySelectorAll('.btn-box').forEach(b => { b.classList.remove('selected'); b.querySelector('.rank').innerText = ""; }); return; }
+                curAns += L; el.classList.add('selected'); el.querySelector('.rank').innerText = curAns.length;
             } else {
                 document.querySelectorAll('.btn-box').forEach(b => b.classList.remove('selected'));
-                el.classList.add('selected');
-                curAns = L;
+                el.classList.add('selected'); curAns = L;
             }
         }
 
-        function sendAns() {
+        function send() {
             let a = curAns;
-            if(qType === 'math' || qType === 'letter') a = document.getElementById('ans-input').value;
-            ws.send(JSON.stringify({ans: a.toUpperCase(), buzzer: ""}));
-            document.getElementById('sub-btn').innerText = "SENT!";
+            if(qType === 'math' || qType === 'letter') a = document.getElementById('ans-in').value;
+            if(!a) return alert("Select an answer!");
+            ws.send(JSON.stringify({ans: a.toUpperCase(), buzzer: document.getElementById('bz').value}));
+            document.getElementById('sub-btn').innerText = "ANSWER SENT!";
+            document.getElementById('sub-btn').style.background = "#238636";
         }
     </script>
 </body>
