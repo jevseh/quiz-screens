@@ -4,91 +4,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        :root { --p: #6200ee; --gold: #ffd700; }
-        body { background: #0b0e14; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding-bottom: 20px; }
+        :root { --p: #6200ee; --bg: #0b0e14; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding-bottom: 30px; }
         .card { background: #1c2128; padding: 20px; border-radius: 20px; margin: 15px; border: 2px solid #333; }
-        #q-media img { max-width: 100%; border-radius: 10px; margin-bottom: 10px; border: 1px solid #444; }
+        #q-media img { max-width: 100%; border-radius: 15px; border: 1px solid #444; margin-bottom: 10px; }
         button, input, select { width: 100%; padding: 15px; margin: 8px 0; border-radius: 12px; border: none; font-weight: bold; font-size: 1.1rem; box-sizing: border-box; }
         .btn-ans { background: #2d333b; color: white; text-align: left; }
         .selected { border: 3px solid var(--p); background: #352b45; }
-        .btn-risk { background: #ff9800; color: #000; border: 2px solid #fff; display: none; }
-        .btn-risk.active { background: #00e676; box-shadow: 0 0 15px #00e676; }
         .hidden { display: none; }
         #overlay { position: fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size: 8rem; pointer-events: none; z-index: 1000; }
     </style>
 </head>
 <body>
     <div id="setup" class="card">
-        <h2>Join Game</h2>
-        <input type="text" id="r" placeholder="4-Digit Code" inputmode="numeric">
+        <h2>Join Quiz</h2>
+        <input type="text" id="r" placeholder="Room Code">
         <input type="text" id="t" placeholder="Team Name">
-        <select id="col"><option value="#ff4444">Red</option><option value="#44ff44">Green</option><option value="#4444ff">Blue</option><option value="#ffff44">Yellow</option><option value="#ff44ff">Pink</option></select>
-        <select id="bz">
-            <option value="https://actions.google.com/sounds/v1/alarms/air_horn.ogg">Air Horn</option>
-            <option value="https://actions.google.com/sounds/v1/cartoon/clown_horn.ogg">Clown Horn</option>
-            <option value="https://actions.google.com/sounds/v1/emergency/beep_warning.ogg">Beep</option>
-            <option value="https://actions.google.com/sounds/v1/transportation/bicycle_bell.ogg">Bicycle Bell</option>
-        </select>
-        <button onclick="join()" style="background:var(--p); color:white;">ENTER QUIZ</button>
+        <select id="col"><option value="#ff4444">Red</option><option value="#44ff44">Green</option><option value="#4444ff">Blue</option><option value="#ffff44">Yellow</option></select>
+        <select id="bz"><option value="https://actions.google.com/sounds/v1/alarms/air_horn.ogg">Air Horn</option><option value="https://actions.google.com/sounds/v1/cartoon/clown_horn.ogg">Clown Horn</option></select>
+        <button onclick="join()" style="background:var(--p); color:white;">JOIN</button>
     </div>
     <div id="game" class="hidden">
-        <div id="q-area" class="card"><div id="q-media"></div><div id="q-txt"><h3>Waiting...</h3></div></div>
-        <div id="input-area" class="card hidden">
-            <button id="risk-btn" class="btn-risk" onclick="risking=!risking; this.classList.toggle('active')">⚡ RISK IT ALL (3X)</button>
+        <div id="q-area" class="card"><div id="q-media"></div><div id="q-txt"></div></div>
+        <div id="input-area" class="card">
             <div id="choices"></div>
-            <input type="text" id="ans-in" class="hidden" placeholder="Type answer here...">
+            <input type="text" id="ans-in" class="hidden" placeholder="Type answer...">
+            <div id="seq-view" style="font-size: 1.5rem; color: var(--p); font-weight: bold; margin: 10px 0;"></div>
             <button id="sub-btn" onclick="send()" style="background:var(--p); color:white;">SUBMIT</button>
         </div>
     </div>
     <div id="overlay"></div>
     <script>
-        let ws, myName, curAns = "", risking = false, qType = "";
+        let ws, myName, curAns = "", qType = "";
         async function join() {
-            if ('wakeLock' in navigator) await navigator.wakeLock.request('screen').catch(()=>{});
             const r = document.getElementById('r').value; myName = document.getElementById('t').value;
             ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${myName}`);
             ws.onopen = () => ws.send(JSON.stringify({type:"JOIN_SETTINGS", color:document.getElementById('col').value, buzzer:document.getElementById('bz').value}));
             ws.onmessage = (e) => {
                 const m = JSON.parse(e.data); const me = m.teams[myName];
-                if(m.status === "active") render(m.q, m.teams, me);
+                if(m.status === "active") render(m.q);
                 if(m.status === "revealed_player") showRes(me);
                 if(m.status === "idle") reset();
             };
             document.getElementById('setup').classList.add('hidden'); document.getElementById('game').classList.remove('hidden');
         }
-        function render(q, teams, me) {
-            let rT = q.type.replace('jackpot_', ''); qType = rT;
-            const leader = Object.entries(teams).sort((a,b) => b[1].s - a[1].s)[0][0];
-            const rank = Object.entries(teams).sort((a,b)=>b[1].s-a[1].s).findIndex(x=>x[0]===myName)+1;
-            if(q.type.startsWith('jackpot') && myName !== leader) {
-                document.getElementById('q-area').innerHTML = `<h1 style="color:var(--gold)">🏆 JACKPOT ROUND</h1>Watching <b>${leader}</b> go for the win!`; 
-                document.getElementById('input-area').classList.add('hidden'); return;
-            }
-            document.getElementById('input-area').classList.remove('hidden');
+        function render(q) {
+            qType = q.type.replace('jackpot_', ''); curAns = "";
             document.getElementById('q-txt').innerHTML = `<h2>${q.title}</h2>`;
+            document.getElementById('seq-view').innerText = "";
             const mBox = document.getElementById('q-media'); mBox.innerHTML = "";
             if(q.med && q.med.match(/\.(jpeg|jpg|gif|png|webp)$/i)) mBox.innerHTML = `<img src="${q.med}">`;
-
-            if(rank >= 4 && me.can_r) document.getElementById('risk-btn').style.display = 'block';
-            if(rT === 'multi' || rT === 'sequence') {
+            
+            if(qType === 'multi' || qType === 'sequence') {
                 document.getElementById('ans-in').classList.add('hidden'); let h = "";
                 q.choices.split('|').forEach((c, i) => { if(c.trim()){ const L = String.fromCharCode(65+i); h += `<button class="btn-ans" onclick="sel('${L}', this)">${L}: ${c}</button>`; } });
                 document.getElementById('choices').innerHTML = h;
             } else { document.getElementById('choices').innerHTML = ""; document.getElementById('ans-in').classList.remove('hidden'); }
         }
-        function sel(L, el) { document.querySelectorAll('.btn-ans').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); curAns = L; }
+        function sel(L, el) {
+            if(qType === 'sequence') {
+                curAns += L; el.disabled = true; el.style.opacity = "0.3";
+                document.getElementById('seq-view').innerText = curAns;
+            } else {
+                document.querySelectorAll('.btn-ans').forEach(b=>b.classList.remove('selected'));
+                el.classList.add('selected'); curAns = L;
+            }
+        }
         function send() {
             let a = (qType === 'multi' || qType === 'sequence') ? curAns : document.getElementById('ans-in').value;
-            ws.send(JSON.stringify({ans: a.toUpperCase(), risking: risking}));
+            ws.send(JSON.stringify({ans: a.toUpperCase()}));
             document.getElementById('sub-btn').innerText = "SENT!"; document.getElementById('sub-btn').disabled = true;
         }
         function showRes(me) {
-            const last = me.h[me.h.length-1]; const isC = last && last.is_c;
-            if(isC) confetti();
-            document.getElementById('overlay').innerText = isC ? "✅" : "❌";
+            const last = me.h[me.h.length-1]; if(last && last.is_c) confetti();
+            document.getElementById('overlay').innerText = (last && last.is_c) ? "✅" : "❌";
             setTimeout(() => document.getElementById('overlay').innerText = "", 3000);
         }
-        function reset() { document.getElementById('sub-btn').disabled = false; document.getElementById('sub-btn').innerText = "SUBMIT"; risking = false; document.getElementById('risk-btn').style.display='none'; }
+        function reset() {
+            document.getElementById('sub-btn').disabled = false; document.getElementById('sub-btn').innerText = "SUBMIT";
+            document.getElementById('ans-in').value = ""; curAns = "";
+        }
     </script>
 </body>
 </html>
