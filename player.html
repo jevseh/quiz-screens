@@ -2,104 +2,87 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        body { background: #0b0e14; color: #fff; font-family: sans-serif; text-align: center; padding: 15px; margin: 0; }
+        :root { --p: #6200ee; --gold: #ffd700; }
+        body { background: #0b0e14; color: #fff; font-family: sans-serif; text-align: center; margin: 0; }
+        .card { background: #1c2128; padding: 20px; border-radius: 20px; margin: 15px; border: 2px solid #333; }
+        button, input, select { width: 100%; padding: 15px; margin: 8px 0; border-radius: 12px; border: none; font-weight: bold; font-size: 1.1rem; box-sizing: border-box; }
+        .btn-ans { background: #2d333b; color: white; text-align: left; }
+        .selected { border: 3px solid var(--p); background: #352b45; }
+        .btn-risk { background: #ff9800; color: #000; border: 2px solid #fff; display: none; }
+        .btn-risk.active { background: #00e676; }
         .hidden { display: none; }
-        input, select, button { width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; border: none; font-size: 1.1rem; box-sizing: border-box; }
-        button { background: #6200ee; color: white; font-weight: bold; cursor: pointer; }
-        .q-card { background: #1c2128; padding: 20px; border-radius: 15px; border: 2px solid #333; min-height: 250px; margin-top: 10px; }
-        .btn-box { background: #2d333b; padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid transparent; text-align: left; display: flex; justify-content: space-between; }
-        .selected { border-color: #bb86fc; background: #352b45; }
-        .rank { color: #00e676; font-weight: bold; }
-        #ans-in { font-size: 2rem; text-align: center; color: #00e676; background: #000; }
+        #overlay { position: fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size: 8rem; pointer-events: none; z-index: 1000; }
     </style>
 </head>
 <body>
-    <div id="setup">
-        <h2 style="color: #6200ee;">Pub Quiz Join</h2>
+    <div id="setup" class="card">
+        <h2>Join Game</h2>
         <input type="text" id="r" placeholder="4-Digit Room Code" inputmode="numeric">
         <input type="text" id="t" placeholder="Team Name">
-        <label style="font-size: 0.8rem; color: #888;">Pick your buzzer sound:</label>
+        <select id="col"><option value="#ff4444">Red</option><option value="#44ff44">Green</option><option value="#4444ff">Blue</option><option value="#ffff44">Yellow</option></select>
         <select id="bz">
             <option value="https://actions.google.com/sounds/v1/alarms/air_horn.ogg">Air Horn</option>
-            <option value="https://actions.google.com/sounds/v1/emergency/beep_warning.ogg">Beep Beep</option>
             <option value="https://actions.google.com/sounds/v1/cartoon/clown_horn.ogg">Clown Horn</option>
+            <option value="https://actions.google.com/sounds/v1/emergency/beep_warning.ogg">Emergency Beep</option>
         </select>
-        <button onclick="join()">JOIN GAME</button>
+        <button onclick="join()" style="background:var(--p); color:white;">ENTER QUIZ</button>
     </div>
-
     <div id="game" class="hidden">
-        <div id="q-area" class="q-card">
-            <h3>Waiting for the host...</h3>
+        <div id="q-area" class="card"><h3>Waiting...</h3></div>
+        <div id="input-area" class="card hidden">
+            <button id="risk-btn" class="btn-risk" onclick="risking=!risking; this.classList.toggle('active')">⚡ RISK IT ALL (3X)</button>
+            <div id="choices"></div>
+            <input type="text" id="ans-in" class="hidden" placeholder="Type answer...">
+            <button id="sub-btn" onclick="send()" style="background:var(--p); color:white;">SUBMIT</button>
         </div>
-        <button id="sub-btn" onclick="send()">SUBMIT ANSWER</button>
     </div>
-
+    <div id="overlay"></div>
     <script>
-        let ws, qType, curAns = "";
-
+        let ws, myName, curAns = "", risking = false, qType = "";
         async function join() {
-            // Keep phone screen on
-            if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch (err) {} }
-            
-            const r = document.getElementById('r').value;
-            const t = document.getElementById('t').value;
-            if(!r || !t) return alert("Enter Code and Team Name!");
-
-            ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${t}`);
-            
+            if ('wakeLock' in navigator) await navigator.wakeLock.request('screen').catch(()=>{});
+            const r = document.getElementById('r').value; myName = document.getElementById('t').value;
+            ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${myName}`);
+            ws.onopen = () => ws.send(JSON.stringify({type:"JOIN_SETTINGS", color:document.getElementById('col').value, buzzer:document.getElementById('bz').value}));
             ws.onmessage = (e) => {
-                const m = JSON.parse(e.data);
-                if(m.type === "NEW_Q") render(m.q);
-                if(m.type === "REV") {
-                    document.getElementById('q-area').innerHTML = `<h3>Answer was:</h3><h1>${m.ans}</h1>`;
-                }
+                const m = JSON.parse(e.data); const me = m.teams[myName];
+                if(m.status === "active") render(m.q, m.teams, me);
+                if(m.status === "revealed_player") showRes(me);
+                if(m.status === "idle") reset();
             };
-            document.getElementById('setup').classList.add('hidden');
-            document.getElementById('game').classList.remove('hidden');
+            document.getElementById('setup').classList.add('hidden'); document.getElementById('game').classList.remove('hidden');
         }
-
-        function render(q) {
-            qType = q.type; curAns = "";
-            let h = `<h3>${q.title}</h3>`;
-            if(q.med && q.med.includes('http')) h = `<img src="${q.med}" style="width:100%; border-radius:10px; margin-bottom:10px;">` + h;
-            
-            if(qType === 'math' || qType === 'letter') {
-                h += `<input type="text" id="ans-in" placeholder="..." autofocus>`;
-            } else {
-                q.choices.split('|').forEach((c, i) => {
-                    if(c.trim() !== "" && c !== "undefined") {
-                        const L = String.fromCharCode(65+i);
-                        h += `<div class="btn-box" onclick="tap(this,'${L}')"><span>${L}: ${c}</span><span class="rank"></span></div>`;
-                    }
-                });
+        function render(q, teams, me) {
+            let realType = q.type.replace('jackpot_', ''); qType = realType;
+            const leader = Object.entries(teams).sort((a,b) => b[1].s - a[1].s)[0][0];
+            const rank = Object.entries(teams).sort((a,b)=>b[1].s-a[1].s).findIndex(x=>x[0]===myName)+1;
+            if(q.type.startsWith('jackpot')) {
+                if(myName !== leader) { document.getElementById('q-area').innerHTML = `<h1 style="color:var(--gold)">🏆 JACKPOT</h1>Watching <b>${leader}</b>...`; document.getElementById('input-area').classList.add('hidden'); return; }
             }
-            document.getElementById('q-area').innerHTML = h;
-            document.getElementById('sub-btn').innerText = "SUBMIT ANSWER";
-            document.getElementById('sub-btn').style.background = "#6200ee";
+            document.getElementById('input-area').classList.remove('hidden');
+            document.getElementById('q-area').innerHTML = `<h2>${q.title}</h2>`;
+            if(rank >= 4 && me.can_r) document.getElementById('risk-btn').style.display = 'block';
+            if(realType === 'multi' || realType === 'sequence') {
+                document.getElementById('ans-in').classList.add('hidden'); let h = "";
+                q.choices.split('|').forEach((c, i) => { if(c.trim()){ const L = String.fromCharCode(65+i); h += `<button class="btn-ans" onclick="sel('${L}', this)">${L}: ${c}</button>`; } });
+                document.getElementById('choices').innerHTML = h;
+            } else { document.getElementById('choices').innerHTML = ""; document.getElementById('ans-in').classList.remove('hidden'); }
         }
-
-        function tap(el, L) {
-            if(qType === 'multi') {
-                el.classList.toggle('selected');
-                curAns = Array.from(document.querySelectorAll('.selected')).map(e => e.innerText[0]).sort().join('');
-            } else if(qType === 'sequence') {
-                if(curAns.includes(L)) { curAns = ""; document.querySelectorAll('.btn-box').forEach(b => { b.classList.remove('selected'); b.querySelector('.rank').innerText = ""; }); return; }
-                curAns += L; el.classList.add('selected'); el.querySelector('.rank').innerText = curAns.length;
-            } else {
-                document.querySelectorAll('.btn-box').forEach(b => b.classList.remove('selected'));
-                el.classList.add('selected'); curAns = L;
-            }
-        }
-
+        function sel(L, el) { document.querySelectorAll('.btn-ans').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); curAns = L; }
         function send() {
-            let a = curAns;
-            if(qType === 'math' || qType === 'letter') a = document.getElementById('ans-in').value;
-            if(!a) return alert("Select an answer!");
-            ws.send(JSON.stringify({ans: a.toUpperCase(), buzzer: document.getElementById('bz').value}));
-            document.getElementById('sub-btn').innerText = "ANSWER SENT!";
-            document.getElementById('sub-btn').style.background = "#238636";
+            let a = (qType === 'multi' || qType === 'sequence') ? curAns : document.getElementById('ans-in').value;
+            ws.send(JSON.stringify({ans: a.toUpperCase(), risking: risking}));
+            document.getElementById('sub-btn').innerText = "SENT!"; document.getElementById('sub-btn').disabled = true;
         }
+        function showRes(me) {
+            const last = me.h[me.h.length-1]; const isC = last && last.is_c;
+            if(isC) confetti();
+            document.getElementById('overlay').innerText = isC ? "✅" : "❌";
+            setTimeout(() => document.getElementById('overlay').innerText = "", 3000);
+        }
+        function reset() { document.getElementById('sub-btn').disabled = false; document.getElementById('sub-btn').innerText = "SUBMIT"; risking = false; document.getElementById('risk-btn').classList.remove('active'); document.getElementById('risk-btn').style.display='none'; }
     </script>
 </body>
 </html>
