@@ -245,9 +245,13 @@
             r.onload = (ev) => {
                 const pk = ev.target.result.split('\n').filter(l=>l.trim()).slice(1).map(l => {
                     const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                   return {
+                    
+                   let rawType = (c[1] || 'multi').toLowerCase();
+                    let parsedType = rawType.includes('seq') ? 'sequence' : (rawType.includes('multi') ? 'multi' : 'text');
+
+                    return {
                         title: c[2].replace(/"/g,""), 
-                        type: c[1]||'multi', 
+                        type: parsedType, 
                         correct: c[3].replace(/"/g,""), 
                         pts: c[4], pen: c[5], 
                         med: c[6]?c[6].trim():"", 
