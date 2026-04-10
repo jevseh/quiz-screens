@@ -245,13 +245,13 @@
             r.onload = (ev) => {
                 const pk = ev.target.result.split('\n').filter(l=>l.trim()).slice(1).map(l => {
                     const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    return {
-                        title: c[0].replace(/"/g,""), 
+                   return {
+                        title: c[2].replace(/"/g,""), 
                         type: c[1]||'multi', 
-                        correct: c[2].replace(/"/g,""), 
-                        pts: c[3], pen: c[4], 
-                        med: c[5]?c[5].trim():"", 
-                        choices: [c[6],c[7],c[8],c[9],c[10],c[11]].join('|').replace(/"/g,"")
+                        correct: c[3].replace(/"/g,""), 
+                        pts: c[4], pen: c[5], 
+                        med: c[6]?c[6].trim():"", 
+                        choices: [c[7],c[8],c[9],c[10],c[11],c[12]].join('|').replace(/"/g,"")
                     };
                 });
                 ws.send(JSON.stringify({type:"LOAD", payload:pk})); 
