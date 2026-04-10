@@ -2,52 +2,60 @@
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QUIZ PLAYER</title>
+    <title>PLAYER APP</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Poppins', sans-serif; background: #0f172a; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; text-align: center; }
         
-        /* TOP PROGRESS BAR (FROM DRAWING) */
         #timer-container { width: 100%; height: 15px; background: #1e293b; position: fixed; top: 0; left: 0; }
         #timer-bar { width: 100%; height: 100%; background: #22c55e; transition: none; }
 
-        .screen { display: none; padding: 20px; flex-direction: column; justify-content: center; height: 100%; }
+        .screen { display: none; padding: 30px; flex-direction: column; justify-content: center; height: 100%; }
         .screen.active { display: flex; }
 
-        /* QUESTION TEXT (FROM DRAWING) */
-        #q-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 30px; line-height: 1.2; }
+        /* JOIN SCREEN */
+        .join-box { background: #1e293b; padding: 40px; border-radius: 30px; border: 2px solid #6366f1; }
+        input { width: 100%; padding: 20px; margin: 10px 0; border-radius: 15px; background: #0f172a; color: white; border: none; font-size: 1.2rem; box-sizing: border-box; }
+        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+        .color-dot { height: 50px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; }
+        .color-dot.selected { border-color: white; transform: scale(1.1); }
 
-        /* BUTTONS (FROM DRAWING - BIG AND COLORFUL) */
-        .choices-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        /* QUIZ SCREEN (HAND DRAWN LOOK) */
+        #q-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 25px; line-height: 1.2; }
+        .choices-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; }
         .btn-choice { 
-            padding: 22px; border-radius: 18px; border: 3px solid #334155; 
-            font-size: 1.4rem; font-weight: 800; color: white; transition: 0.2s; 
+            padding: 20px; border-radius: 18px; border: 3px solid #334155; 
+            font-size: 1.3rem; font-weight: 800; color: white; transition: 0.2s; 
             text-align: left; display: flex; align-items: center; gap: 15px;
         }
-        .btn-choice:active { transform: scale(0.95); }
-        .btn-choice:disabled { opacity: 0.4; }
-        .letter-box { background: white; color: black; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 1.2rem; }
+        .letter-box { background: white; color: black; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.1rem; }
 
-        /* COLORS FOR BUTTONS */
+        /* COLOR THEME */
         .btn-A { background: #ef4444; } .btn-B { background: #3b82f6; } 
         .btn-C { background: #10b981; } .btn-D { background: #f59e0b; }
         .btn-E { background: #8b5cf6; } .btn-F { background: #ec4899; }
-
-        #break-screen { background: #8b5cf6; }
+        .btn-choice:disabled { opacity: 0.4; pointer-events: none; }
     </style>
 </head>
 <body>
     <div id="timer-container"><div id="timer-bar"></div></div>
 
-    <div id="waiting" class="screen active">
-        <h1 style="font-size: 3rem;">WAITING FOR HOST</h1>
-        <p style="opacity: 0.6;">Get ready to play!</p>
+    <div id="join-screen" class="screen active">
+        <div class="join-box">
+            <h1>JOIN QUIZ</h1>
+            <input type="text" id="join-code" placeholder="4-Digit Room Code">
+            <input type="text" id="join-name" placeholder="Your Name">
+            <div class="color-grid">
+                <div class="color-dot" style="background:#ef4444" onclick="selCol('#ef4444', this)"></div>
+                <div class="color-dot" style="background:#3b82f6" onclick="selCol('#3b82f6', this)"></div>
+                <div class="color-dot" style="background:#10b981" onclick="selCol('#10b981', this)"></div>
+                <div class="color-dot" style="background:#f59e0b" onclick="selCol('#f59e0b', this)"></div>
+            </div>
+            <button onclick="joinGame()" class="btn-choice btn-B" style="justify-content:center;">JOIN GAME</button>
+        </div>
     </div>
 
-    <div id="break-screen" class="screen">
-        <h1 style="font-size: 3rem;">BREAK TIME</h1>
-        <p>Intermission - relax!</p>
-    </div>
+    <div id="waiting" class="screen"><h1>GET READY!</h1><p>Waiting for the host...</p></div>
 
     <div id="quiz-screen" class="screen">
         <h2 id="q-title">Question</h2>
@@ -56,21 +64,38 @@
 
     <div id="text-screen" class="screen">
         <h2>TYPE ANSWER</h2>
-        <input type="text" id="t-ans" style="padding:20px; border-radius:15px; width:90%; font-size:1.5rem; text-align:center;">
-        <button onclick="submitText()" class="btn-choice btn-B" style="margin-top:20px; justify-content:center;">SUBMIT</button>
+        <input type="text" id="t-ans">
+        <button onclick="submitText()" class="btn-choice btn-C" style="justify-content:center;">SUBMIT</button>
     </div>
 
     <script>
-        let ws, room = location.pathname.split('/')[2], user = localStorage.getItem('quiz_user'), hasAns = false;
+        let ws, room, user, color = "#6366f1", hasAns = false;
         
-        ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${room}/player/${user}`);
-        ws.onmessage = (e) => {
-            const msg = JSON.parse(e.data);
-            if(msg.type === "PREP") setupQ(msg.payload);
-            if(msg.type === "START") startTimer(msg.payload.limit);
-            if(msg.type === "STOP") lock();
-            if(msg.type === "BREAK") show('break-screen');
-        };
+        function selCol(c, el) { 
+            color = c; 
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function joinGame() {
+            room = document.getElementById('join-code').value;
+            user = document.getElementById('join-name').value;
+            if(!room || !user) return alert("Enter Code & Name");
+            localStorage.setItem('quiz_user', user);
+            connect();
+        }
+
+        function connect() {
+            ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${room}/player/${user}`);
+            ws.onopen = () => show('waiting');
+            ws.onmessage = (e) => {
+                const msg = JSON.parse(e.data);
+                if(msg.type === "PREP") setupQ(msg.payload);
+                if(msg.type === "START") startTimer(msg.payload.limit);
+                if(msg.type === "STOP") lock();
+                if(msg.type === "BREAK") show('break-screen');
+            };
+        }
 
         function setupQ(q) {
             hasAns = false;
@@ -99,12 +124,6 @@
             if(hasAns) return; hasAns = true;
             ws.send(JSON.stringify({type:"ANSWER", payload:{answer: ans}}));
             lock(); btn.style.border = "6px solid white";
-        }
-
-        function submitText() {
-            if(hasAns) return; hasAns = true;
-            ws.send(JSON.stringify({type:"ANSWER", payload:{answer: document.getElementById('t-ans').value}}));
-            lock();
         }
 
         function lock() { document.querySelectorAll('.btn-choice').forEach(b => b.disabled = true); }
