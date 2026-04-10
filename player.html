@@ -136,8 +136,7 @@
             document.getElementById('team-name-disp').innerText = myName;
             document.getElementById('header-bar').style.background = document.getElementById('col').value;
             
-            // 🚨 REPLACE THIS URL
-            ws = new WebSocket(`wss://YOUR-RENDER-URL.onrender.com/ws/${r}/player/${myName}`);
+                ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${r}/player/${myName}`);
             
             ws.onopen = () => {
                 ws.send(JSON.stringify({
