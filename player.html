@@ -7,6 +7,7 @@
     <style>
         body { font-family: 'Poppins', sans-serif; background: #0f172a; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; text-align: center; }
         
+        /* TIMER BAR (TOP) */
         #timer-container { width: 100%; height: 15px; background: #1e293b; position: fixed; top: 0; left: 0; }
         #timer-bar { width: 100%; height: 100%; background: #22c55e; transition: none; }
 
@@ -14,27 +15,27 @@
         .screen.active { display: flex; }
 
         /* JOIN SCREEN */
-        .join-box { background: #1e293b; padding: 40px; border-radius: 30px; border: 2px solid #6366f1; }
-        input { width: 100%; padding: 20px; margin: 10px 0; border-radius: 15px; background: #0f172a; color: white; border: none; font-size: 1.2rem; box-sizing: border-box; }
-        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
-        .color-dot { height: 50px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; }
-        .color-dot.selected { border-color: white; transform: scale(1.1); }
+        .join-box { background: #1e293b; padding: 40px; border-radius: 35px; border: 3px solid #6366f1; }
+        input { width: 100%; padding: 20px; margin: 15px 0; border-radius: 15px; background: #0f172a; color: white; border: none; font-size: 1.3rem; }
+        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 25px 0; }
+        .color-dot { height: 60px; border-radius: 15px; cursor: pointer; border: 4px solid transparent; }
+        .color-dot.selected { border-color: white; transform: scale(1.1); box-shadow: 0 0 20px white; }
 
-        /* QUIZ SCREEN (HAND DRAWN LOOK) */
-        #q-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 25px; line-height: 1.2; }
-        .choices-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        /* QUIZ SCREEN */
+        #q-title { font-size: 2rem; font-weight: 800; margin-bottom: 40px; }
+        .choices-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
         .btn-choice { 
-            padding: 20px; border-radius: 18px; border: 3px solid #334155; 
-            font-size: 1.3rem; font-weight: 800; color: white; transition: 0.2s; 
-            text-align: left; display: flex; align-items: center; gap: 15px;
+            padding: 24px; border-radius: 20px; border: 4px solid #334155; 
+            font-size: 1.5rem; font-weight: 800; color: white; transition: 0.2s; 
+            text-align: left; display: flex; align-items: center; gap: 20px;
         }
-        .letter-box { background: white; color: black; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.1rem; }
-
-        /* COLOR THEME */
-        .btn-A { background: #ef4444; } .btn-B { background: #3b82f6; } 
-        .btn-C { background: #10b981; } .btn-D { background: #f59e0b; }
-        .btn-E { background: #8b5cf6; } .btn-F { background: #ec4899; }
-        .btn-choice:disabled { opacity: 0.4; pointer-events: none; }
+        .letter-box { background: white; color: black; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 1.3rem; }
+        
+        /* COLORS FROM VISION */
+        .btn-A { background: #ef4444; } .btn-B { background: #3b82f6; } .btn-C { background: #10b981; } 
+        .btn-D { background: #f59e0b; } .btn-E { background: #8b5cf6; } .btn-F { background: #ec4899; }
+        .btn-choice:disabled { opacity: 0.4; }
+        #break-screen { background: #8b5cf6; }
     </style>
 </head>
 <body>
@@ -42,28 +43,29 @@
 
     <div id="join-screen" class="screen active">
         <div class="join-box">
-            <h1>JOIN QUIZ</h1>
-            <input type="text" id="join-code" placeholder="4-Digit Room Code">
-            <input type="text" id="join-name" placeholder="Your Name">
+            <h1 style="font-weight: 800;">JOIN THE GAME</h1>
+            <input type="text" id="join-code" placeholder="Enter Room Code">
+            <input type="text" id="join-name" placeholder="Enter Your Name">
             <div class="color-grid">
                 <div class="color-dot" style="background:#ef4444" onclick="selCol('#ef4444', this)"></div>
                 <div class="color-dot" style="background:#3b82f6" onclick="selCol('#3b82f6', this)"></div>
                 <div class="color-dot" style="background:#10b981" onclick="selCol('#10b981', this)"></div>
                 <div class="color-dot" style="background:#f59e0b" onclick="selCol('#f59e0b', this)"></div>
             </div>
-            <button onclick="joinGame()" class="btn-choice btn-B" style="justify-content:center;">JOIN GAME</button>
+            <button onclick="join()" class="btn-choice btn-B" style="justify-content:center;">CONNECT</button>
         </div>
     </div>
 
-    <div id="waiting" class="screen"><h1>GET READY!</h1><p>Waiting for the host...</p></div>
+    <div id="waiting" class="screen"><h1>CONNECTED</h1><p>Wait for the next question...</p></div>
+    <div id="break-screen" class="screen"><h1>INTERMISSION</h1><p>The host has paused the game.</p></div>
 
     <div id="quiz-screen" class="screen">
-        <h2 id="q-title">Question</h2>
+        <h2 id="q-title">Question Title</h2>
         <div id="choices-container" class="choices-grid"></div>
     </div>
 
     <div id="text-screen" class="screen">
-        <h2>TYPE ANSWER</h2>
+        <h2>TYPE YOUR ANSWER</h2>
         <input type="text" id="t-ans">
         <button onclick="submitText()" class="btn-choice btn-C" style="justify-content:center;">SUBMIT</button>
     </div>
@@ -77,10 +79,10 @@
             el.classList.add('selected');
         }
 
-        function joinGame() {
+        function join() {
             room = document.getElementById('join-code').value;
             user = document.getElementById('join-name').value;
-            if(!room || !user) return alert("Enter Code & Name");
+            if(!room || !user) return alert("Fill everything!");
             localStorage.setItem('quiz_user', user);
             connect();
         }
@@ -124,6 +126,12 @@
             if(hasAns) return; hasAns = true;
             ws.send(JSON.stringify({type:"ANSWER", payload:{answer: ans}}));
             lock(); btn.style.border = "6px solid white";
+        }
+
+        function submitText() {
+            if(hasAns) return; hasAns = true;
+            ws.send(JSON.stringify({type:"ANSWER", payload:{answer: document.getElementById('t-ans').value}}));
+            lock();
         }
 
         function lock() { document.querySelectorAll('.btn-choice').forEach(b => b.disabled = true); }
