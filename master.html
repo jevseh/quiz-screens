@@ -1,109 +1,274 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Master Suite Pro</title>
+    <meta charset="utf-8">
+    <title>QuizMaster - CyberPop Control</title>
     <style>
-        :root { --p: #6200ee; --bg: #0b0e14; --card: #1c2128; --gold: #ffd700; --red: #ff4444; --green: #00e676; }
-        body { background: var(--bg); color: #adbac7; font-family: 'Inter', sans-serif; display: flex; margin: 0; height: 100vh; overflow: hidden; }
-        .sidebar { width: 400px; background: var(--card); border-right: 1px solid #333; display: flex; flex-direction: column; }
-        .main { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .tab-bar { display: flex; background: #000; }
-        .tab { flex: 1; padding: 15px; border: none; background: none; color: #666; cursor: pointer; font-weight: bold; }
-        .tab.active { color: var(--p); border-bottom: 3px solid var(--p); }
-        #timer { font-size: 10rem; font-weight: 900; color: var(--green); line-height: 1; margin: 10px 0; }
-        .q-display { background: var(--card); padding: 20px; border-radius: 25px; width: 85%; border: 2px solid #444; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #q-media img { max-height: 250px; max-width: 100%; border-radius: 15px; border: 1px solid #555; margin-bottom: 10px; }
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; width: 85%; }
-        button { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; }
-        .btn-start { background: #238636; grid-column: span 2; font-size: 1.4rem; }
-        .btn-rev-m { background: #ff9800; } .btn-rev-p { background: #007bff; }
-        .btn-next { background: var(--p); } .btn-break { background: #444; }
-        .team-card { background: #000; padding: 12px; border-radius: 10px; margin-bottom: 8px; border-left: 6px solid var(--p); text-align: left; }
-        #break-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+        :root { --bg: #0B0E14; --panel: #151B23; --cyan: #00E5FF; --pink: #FF007F; --green: #00E676; --red: #FF1744; --gold: #FFD700; }
+        body { background: var(--bg); color: #FFF; font-family: 'Inter', sans-serif; display: flex; margin: 0; height: 100vh; overflow: hidden; }
+        #login-gate { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
+        input[type="text"], input[type="password"], input[type="number"] { padding: 10px; border-radius: 5px; border: 1px solid var(--cyan); background: #000; color: #FFF; margin: 5px; }
+        button { padding: 12px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: #000; text-transform: uppercase; transition: 0.2s; }
+        button:hover { transform: scale(1.02); }
+        .btn-cyan { background: var(--cyan); } .btn-pink { background: var(--pink); color: #FFF; } .btn-green { background: var(--green); }
+        .sidebar { width: 380px; background: var(--panel); border-right: 2px solid #222; display: flex; flex-direction: column; }
+        .tab-bar { display: flex; background: #000; } .tab { flex: 1; background: none; color: #666; } .tab.active { color: var(--cyan); border-bottom: 2px solid var(--cyan); }
+        .main { flex: 1; display: flex; flex-direction: column; padding: 20px; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .q-display { background: #000; border: 2px solid var(--pink); border-radius: 15px; padding: 20px; text-align: center; margin: 20px 0; min-height: 200px; display:flex; flex-direction:column; justify-content:center;}
+        #timer { font-size: 8rem; font-weight: 900; color: var(--green); text-align: center; line-height: 1; }
+        .cmd-strip { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .team-card { background: #000; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 5px solid var(--cyan); }
+        .settings-panel { padding: 15px; background: #000; font-size: 0.9rem; border-top: 2px solid #333; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div id="break-overlay">
-        <h1 style="color:var(--p); font-size: 4rem;">PAUSE</h1>
-        <button onclick="ws.send(JSON.stringify({type:'NEXT'}))" class="btn-start" style="width:300px;">RESUME</button>
+    <div id="login-gate">
+        <h1 style="color:var(--cyan)">SYSTEM LOGIN</h1>
+        <input type="text" id="usr" placeholder="Username">
+        <input type="password" id="pwd" placeholder="Password">
+        <button class="btn-cyan" onclick="login()">Authenticate</button>
     </div>
+
     <div class="sidebar">
-        <div class="tab-bar"><button class="tab active" id="l-tab" onclick="setTab('lobby')">FEED</button><button class="tab" id="s-tab" onclick="setTab('stats')">SCORES</button></div>
-        <div id="side-list" style="flex:1; padding:20px; overflow-y:auto;"></div>
-        <div style="padding:20px; background:#000;">Pts: <input type="number" id="pts" value="10" style="width:40px;"> Pen: <input type="number" id="pen" value="0" style="width:40px;"><button style="background:#444; width:100%; margin-top:10px;" onclick="document.getElementById('csv').click()">📁 LOAD CSV</button><input type="file" id="csv" style="display:none"></div>
+        <div class="tab-bar">
+            <button class="tab active" onclick="setTab('feed')">Feed</button>
+            <button class="tab" onclick="setTab('board')">Leaderboard</button>
+            <button class="tab" onclick="setTab('stats')">Stats</button>
+        </div>
+        <div id="side-list" style="flex:1; padding:15px; overflow-y:auto;"></div>
+        
+        <div class="settings-panel">
+            <b style="color:var(--cyan)">⚙️ Customizable</b><br><br>
+            Time (s): <input type="number" id="s-time" value="30" style="width:50px" onchange="saveSettings(); updateTimerPreview()"> 
+            Bonus %: <input type="number" id="s-bonus" value="10" style="width:50px" onchange="saveSettings()"><br><br>
+            Mute: <label><input type="checkbox" id="m-buzz" onchange="saveSettings()"> Buzzers</label> 
+            <label><input type="checkbox" id="m-tick" onchange="saveSettings()"> Tick Timer</label><br><br>
+            <label><input type="checkbox" id="s-underdog" onchange="saveSettings()"> Allow Underdog (3x)</label><br>
+            <button class="btn-pink" style="width:100%; margin-top:15px;" onclick="document.getElementById('csv').click()">📁 Load CSV</button>
+            <input type="file" id="csv" class="hidden">
+        </div>
     </div>
+
     <div class="main">
-        <div id="room-id" style="font-weight:bold; color:var(--p); margin-bottom:5px;">ROOM: ----</div>
-        <div class="q-display" id="q-box">
-            <div id="q-media"></div>
-            <h1 id="q-title" style="margin:5px 0;">Ready to Host</h1>
-            <h2 id="q-ans" style="display:none; color:var(--green); font-size: 2rem;"></h2>
-            <button id="replay-btn" onclick="playMedia()" style="background:#444; display:none; width: 150px; padding: 10px;">🔊 REPLAY</button>
+        <div class="header">
+            <div><b style="color:var(--cyan)">ROOM:</b> <span id="r-code" class="hidden" style="font-size:1.2rem; font-weight:bold; letter-spacing:2px; color:var(--pink)">----</span> <button onclick="document.getElementById('r-code').classList.toggle('hidden')">Reveal</button></div>
+            <div id="q-tracker" style="color:var(--gold); font-size:1.5rem; font-weight:bold;">Q: 0 / 0</div>
+            <div>
+                Pts: <input type="number" id="q-pts" value="10" style="width:50px"> 
+                Pen: <input type="number" id="q-pen" value="0" style="width:50px">
+            </div>
         </div>
-        <div id="timer">30</div>
-        <div class="controls">
-            <button class="btn-start" onclick="start()">🚀 START QUESTION</button>
-            <button class="btn-rev-m" onclick="revM()">👁️ MASTER REVEAL</button>
-            <button class="btn-rev-p" onclick="revP()">📢 PLAYER REVEAL</button>
-            <button class="btn-next" onclick="next()">➡️ NEXT Q</button>
-            <button class="btn-break" onclick="ws.send(JSON.stringify({type:'BREAK'}))">☕ BREAK</button>
+        
+        <div class="q-display">
+            <h2 id="q-title" style="margin:0;">Waiting for CSV...</h2>
+            <div id="q-media" style="margin:10px 0;"></div>
+            <h3 id="q-ans" style="color:var(--green); display:none; margin:0; padding-top:10px;"></h3>
+            <div style="margin-top:10px;"><button id="replay-btn" class="hidden btn-cyan" onclick="aud.play()">🔊 Replay Audio</button></div>
+        </div>
+        
+        <div style="display:flex; justify-content:center; align-items:center; gap:30px;">
+            <div id="timer">30</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="btn-green" style="font-size:1.5rem; padding:15px 30px;" onclick="start()">START</button>
+                <button class="btn-pink" onclick="addTime()">+15s</button>
+            </div>
+        </div>
+        
+        <div class="cmd-strip">
+            <button onclick="ws.send(JSON.stringify({type:'NEXT'}))" class="btn-cyan">➡️ Next (Prep)</button>
+            <button onclick="revM()">👁️ Master Rev</button>
+            <button onclick="ws.send(JSON.stringify({type:'REVEAL_PLAYER'}))" class="btn-green">📢 Show All</button>
+            <button onclick="ws.send(JSON.stringify({type:'RESET_Q'}))" style="background:#555;color:#fff;">🔄 Reset Q</button>
+            <button onclick="ws.send(JSON.stringify({type:'BREAK'}))" style="background:var(--red);color:#fff;">☕ Break</button>
         </div>
     </div>
+
     <audio id="master-aud"></audio>
     <audio id="tick-snd" src="https://www.soundjay.com/buttons/beep-07.mp3"></audio>
+
     <script>
-        let ws, room, tInt, currentQ, teams = {}, curTab = 'lobby';
-        const aud = document.getElementById('master-aud'); const tick = document.getElementById('tick-snd');
-        async function init() {
-            const res = await fetch('https://my-pub-quiz.onrender.com/create-room'); const data = await res.json();
-            room = data.room_code; document.getElementById('room-id').innerText = "ROOM: " + room;
-            ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${room}/master/M`);
+        let ws, room, tInt, currentQ, teams = {}, curTab = 'feed', seconds = 30;
+        const aud = document.getElementById('master-aud'), tick = document.getElementById('tick-snd');
+
+        // Restore State & Settings (Disaster Recovery)
+        if(localStorage.getItem('quiz_room')) {
+            room = localStorage.getItem('quiz_room');
+            document.getElementById('login-gate').classList.add('hidden');
+            loadSettings();
+            connectWS();
+        }
+
+        function saveSettings() {
+            localStorage.setItem('s_time', document.getElementById('s-time').value);
+            localStorage.setItem('s_bonus', document.getElementById('s-bonus').value);
+            localStorage.setItem('m_buzz', document.getElementById('m-buzz').checked);
+            localStorage.setItem('m_tick', document.getElementById('m-tick').checked);
+            localStorage.setItem('s_underdog', document.getElementById('s-underdog').checked);
+        }
+
+        function loadSettings() {
+            if(localStorage.getItem('s_time')) document.getElementById('s-time').value = localStorage.getItem('s_time');
+            if(localStorage.getItem('s_bonus')) document.getElementById('s-bonus').value = localStorage.getItem('s_bonus');
+            if(localStorage.getItem('m_buzz') === 'true') document.getElementById('m-buzz').checked = true;
+            if(localStorage.getItem('m_tick') === 'true') document.getElementById('m-tick').checked = true;
+            if(localStorage.getItem('s_underdog') === 'true') document.getElementById('s-underdog').checked = true;
+            updateTimerPreview();
+        }
+
+        async function login() {
+            const res = await fetch('https://YOUR-RENDER-URL.onrender.com/login', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: document.getElementById('usr').value, password: document.getElementById('pwd').value})
+            });
+            const data = await res.json();
+            if(data.success) {
+                room = data.room_code;
+                localStorage.setItem('quiz_room', room);
+                document.getElementById('login-gate').classList.add('hidden');
+                connectWS();
+            } else alert("Invalid Login Credentials");
+        }
+
+        function connectWS() {
+            document.getElementById('r-code').innerText = room;
+            ws = new WebSocket(`wss://YOUR-RENDER-URL.onrender.com/ws/${room}/master/M`);
             ws.onmessage = (e) => {
                 const m = JSON.parse(e.data);
-                if(m.type === "BEEP") { aud.src = m.url; aud.play(); }
-                if(m.type === "UP") {
-                    teams = m.teams; currentQ = m.q;
-                    document.getElementById('break-overlay').style.display = (m.status === 'break') ? 'flex' : 'none';
-                    updateUI(m.status);
-                }
+                if(m.type === "BEEP" && !document.getElementById('m-buzz').checked) { aud.src = m.url; aud.play().catch(()=>{}); }
+                if(m.type === "UP") { teams = m.teams; currentQ = m.q; updateUI(m); }
             };
+            setInterval(() => { if(ws.readyState===1) ws.send(JSON.stringify({type:"PING"})); }, 20000); // Heartbeat
         }
-        function setTab(t) { curTab = t; document.getElementById('l-tab').classList.toggle('active', t==='lobby'); document.getElementById('s-tab').classList.toggle('active', t==='stats'); updateUI(); }
-        function updateUI(status) {
-            let h = ""; const sorted = Object.entries(teams).sort((a,b) => b[1].s - a[1].s);
-            for(let [name, t] of sorted) {
-                if(curTab === 'lobby') {
-                    const last = t.h[t.h.length-1]; let ind = "";
-                    if (status === 'revealed_player' && last) ind = `<span style="background:${last.is_c?'var(--green)':'var(--red)'}; color:#000; padding:2px 5px; border-radius:4px; margin-left:10px;">${last.ans}</span>`;
-                    h += `<div class="team-card" style="border-color:${t.c}"><b>${name}</b> ${ind}<br><small>Score: ${t.s}</small></div>`;
-                } else h += `<div class="team-card"><b>${name}</b>: ${t.s}<br><small>🔥 Streak: ${t.ms} | ⚡ Fast: ${t.fc}</small></div>`;
+
+        function setTab(t) { 
+            curTab = t; 
+            document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active')); 
+            event.target.classList.add('active'); 
+            updateUI({status: currentQ ? 'idle' : 'lobby'}); 
+        }
+
+        function updateUI(m) {
+            let h = ""; 
+            const sorted = Object.entries(teams).sort((a,b)=>b[1].s-a[1].s);
+            for(let [n, t] of sorted) {
+                if(curTab === 'feed') {
+                    const last = t.h[t.h.length-1];
+                    let stat = (m.status==='active' && last && last.q === m.q_idx) ? "✅ Submitted" : "⏳ Waiting...";
+                    h += `<div class="team-card" style="border-color:${t.c}"><b>${n}</b>: ${stat}</div>`;
+                } else if(curTab === 'board') {
+                    h += `<div class="team-card"><b>${n}</b>: <span style="color:var(--green)">${t.s} pts</span></div>`;
+                } else {
+                    h += `<div class="team-card"><b>${n}</b><br><small>Streak: ${t.ms} | Fastest Finger: ${t.fc}</small></div>`;
+                }
             }
             document.getElementById('side-list').innerHTML = h;
+
             if(currentQ) {
+                document.getElementById('q-tracker').innerText = `Q: ${m.q_idx+1} / ${m.total_q}`;
                 document.getElementById('q-title').innerText = currentQ.title;
-                const mBox = document.getElementById('q-media'); mBox.innerHTML = ""; document.getElementById('replay-btn').style.display = 'none';
+                document.getElementById('q-pts').value = currentQ.pts || 10;
+                document.getElementById('q-pen').value = currentQ.pen || 0;
+                
+                const mBox = document.getElementById('q-media'); 
+                mBox.innerHTML = "";
+                document.getElementById('replay-btn').classList.add('hidden');
+                
                 if(currentQ.med && currentQ.med.startsWith('http')) {
-                    if(currentQ.med.match(/\.(jpeg|jpg|gif|png|webp)$/i)) mBox.innerHTML = `<img src="${currentQ.med}">`;
-                    if(currentQ.med.match(/\.(mp3|wav|ogg)$/i)) { document.getElementById('replay-btn').style.display = 'inline-block'; aud.src = currentQ.med; }
+                    if(currentQ.med.match(/\.(jpeg|jpg|gif|png|webp)$/i)) mBox.innerHTML = `<img src="${currentQ.med}" style="max-height:150px; border-radius:10px;">`;
+                    if(currentQ.med.match(/\.(mp3|wav|ogg)$/i)) { aud.src = currentQ.med; document.getElementById('replay-btn').classList.remove('hidden'); }
                 }
             }
-            if(status === "idle") { document.getElementById('q-ans').style.display = "none"; document.getElementById('timer').style.color = "var(--green)"; }
+            
+            if(m.status === "idle") { 
+                document.getElementById('q-ans').style.display = "none"; 
+                document.getElementById('timer').style.color = "var(--green)"; 
+            }
         }
-        function playMedia() { if(aud.src) aud.play(); }
-        function start() { playMedia(); let s = 30; clearInterval(tInt); tInt = setInterval(() => { s--; document.getElementById('timer').innerText = s; if(s<=10) tick.play(); if(s<=0) clearInterval(tInt); }, 1000); ws.send(JSON.stringify({type:"START", pts:document.getElementById('pts').value, pen:document.getElementById('pen').value})); }
-        function revM() { document.getElementById('q-ans').innerText = "Ans: " + currentQ.correct; document.getElementById('q-ans').style.display = "block"; ws.send(JSON.stringify({type:"REVEAL_MASTER"})); }
-        function revP() { ws.send(JSON.stringify({type:"REVEAL_PLAYER"})); }
-        function next() { document.getElementById('timer').innerText = "30"; ws.send(JSON.stringify({type: "NEXT"})); }
+
+        function updateTimerPreview() { document.getElementById('timer').innerText = document.getElementById('s-time').value; }
+        function addTime() { seconds += 15; document.getElementById('timer').innerText = seconds; }
+
+        function start() {
+            seconds = parseInt(document.getElementById('s-time').value); 
+            document.getElementById('timer').innerText = seconds;
+            document.getElementById('q-ans').style.display = "none";
+            document.getElementById('timer').style.color = "var(--green)";
+            
+            if(aud.src && currentQ && currentQ.med.match(/\.(mp3|wav|ogg)$/i)) aud.play().catch(()=>{});
+            
+            clearInterval(tInt);
+            tInt = setInterval(() => {
+                seconds--; document.getElementById('timer').innerText = seconds;
+                if(seconds <= 10 && seconds > 0 && !document.getElementById('m-tick').checked) tick.play().catch(()=>{});
+                if(seconds <= 0) { 
+                    clearInterval(tInt); 
+                    ws.send(JSON.stringify({type:"LOCK"})); 
+                    document.getElementById('timer').style.color = "var(--red)"; 
+                }
+            }, 1000);
+            
+            ws.send(JSON.stringify({
+                type:"START", 
+                pts: document.getElementById('q-pts').value, 
+                pen: document.getElementById('q-pen').value, 
+                bonus: document.getElementById('s-bonus').value, 
+                underdog_allowed: document.getElementById('s-underdog').checked
+            }));
+        }
+
+        // Human-Readable Answer logic for the Host
+        function getHumanAns() {
+            if(!currentQ) return "";
+            if(currentQ.type === 'multi') {
+                const idx = currentQ.correct.toUpperCase().charCodeAt(0) - 65;
+                const txt = currentQ.choices.split('|')[idx] || "Unknown";
+                return `${currentQ.correct} (${txt})`;
+            }
+            if(currentQ.type === 'sequence') {
+                const arr = currentQ.choices.split('|');
+                let res = currentQ.correct.toUpperCase().split('').map(c => arr[c.charCodeAt(0)-65]).join(' ➡️ ');
+                return `${currentQ.correct} (${res})`;
+            }
+            return currentQ.correct;
+        }
+
+        function revM() { 
+            document.getElementById('q-ans').innerText = "Ans: " + getHumanAns(); 
+            document.getElementById('q-ans').style.display = "block"; 
+            ws.send(JSON.stringify({type:"REVEAL_MASTER"})); 
+        }
+
         document.getElementById('csv').onchange = (e) => {
-            const r = new FileReader(); r.onload = (ev) => {
-                const lines = ev.target.result.split('\n').filter(l => l.trim());
-                const pk = lines.slice(1).map(l => {
+            const r = new FileReader(); 
+            r.onload = (ev) => {
+                const pk = ev.target.result.split('\n').filter(l=>l.trim()).slice(1).map(l => {
                     const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    return {title:c[0].replace(/"/g,""), type:c[1]||'multi', correct:c[2].replace(/"/g,""), med:c[5] ? c[5].trim() : "", choices: [c[6],c[7],c[8],c[9],c[10],c[11]].join('|').replace(/"/g,"")};
+                    return {
+                        title: c[0].replace(/"/g,""), 
+                        type: c[1]||'multi', 
+                        correct: c[2].replace(/"/g,""), 
+                        pts: c[3], pen: c[4], 
+                        med: c[5]?c[5].trim():"", 
+                        choices: [c[6],c[7],c[8],c[9],c[10],c[11]].join('|').replace(/"/g,"")
+                    };
                 });
-                ws.send(JSON.stringify({type: "LOAD", payload: pk})); alert("Loaded!");
-            }; r.readAsText(e.target.files[0]);
-        }; init();
+                ws.send(JSON.stringify({type:"LOAD", payload:pk})); 
+                alert("CSV Loaded successfully!");
+            }; 
+            r.readAsText(e.target.files[0]);
+        };
+        
+        // Host Pro Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if(e.target.tagName === 'INPUT') return; // Don't trigger if typing in a box
+            if(e.code === 'Space') { e.preventDefault(); start(); }
+            if(e.code === 'KeyR') { e.preventDefault(); aud.play(); }
+            if(e.code === 'ArrowRight') ws.send(JSON.stringify({type:'NEXT'}));
+            if(e.code === 'KeyM') revM();
+            if(e.code === 'KeyP') ws.send(JSON.stringify({type:'REVEAL_PLAYER'}));
+        });
     </script>
 </body>
 </html>
