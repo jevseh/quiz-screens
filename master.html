@@ -2,227 +2,437 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QUIZ MASTER PRO | CONTROL CENTER</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        :root { --primary: #6366f1; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #22c55e; --danger: #ef4444; --warning: #f59e0b; --break: #a855f7; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
-
-        /* SIDEBAR (FROM DRAWING) */
-        #sidebar { width: 340px; background: var(--card); border-right: 4px solid #334155; display: flex; flex-direction: column; padding: 30px; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
-        .room-info { text-align: center; margin-bottom: 30px; padding: 25px; background: rgba(0,0,0,0.4); border-radius: 20px; border: 2px solid var(--primary); }
-        .room-info label { font-size: 0.7rem; font-weight: 800; opacity: 0.5; letter-spacing: 2px; }
-        #r-code { margin: 10px 0 0; color: var(--primary); font-size: 3.2rem; letter-spacing: 6px; font-weight: 800; line-height: 1; }
-        
-        .tab-btn { background: #334155; border: none; color: white; padding: 18px; margin: 10px 0; border-radius: 15px; cursor: pointer; text-align: left; font-weight: 600; display: flex; align-items: center; gap: 12px; font-size: 1.1rem; transition: 0.3s; border-left: 5px solid transparent; }
-        .tab-btn:hover { background: #475569; border-left: 5px solid var(--primary); }
-        .tab-btn.active { background: var(--primary); box-shadow: 0 4px 25px rgba(99, 102, 241, 0.4); border-left: 5px solid white; }
-
-        /* MAIN DASHBOARD */
-        #main { flex: 1; padding: 50px; overflow-y: auto; background: radial-gradient(circle at top right, #1e1b4b, var(--bg)); position: relative; }
-        .view { display: none; max-width: 1100px; margin: 0 auto; animation: slideUp 0.4s ease; }
-        .view.active { display: block; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .card { background: var(--card); padding: 45px; border-radius: 35px; box-shadow: 0 30px 60px -12px rgba(0,0,0,0.6); border: 1px solid #334155; margin-bottom: 30px; }
-        .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        #q-meta { color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 3px; font-size: 1.1rem; }
-        #timer-box { background: #000; color: var(--warning); padding: 12px 35px; border-radius: 15px; font-weight: 900; font-size: 2.5rem; border: 4px solid var(--warning); box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
-        #q-text { font-size: 2.8rem; font-weight: 800; margin: 30px 0; color: #fff; line-height: 1.2; }
-
-        /* 5-BUTTON GRID (LAYOUT FROM IMAGE) */
-        .control-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin-top: 40px; }
-        .btn-huge { padding: 28px; border-radius: 20px; border: none; cursor: pointer; font-weight: 800; font-size: 1.3rem; transition: 0.2s; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .btn-next { background: var(--warning); color: #000; }
-        .btn-start { background: var(--accent); color: white; }
-        .btn-stop { background: var(--danger); color: white; }
-        .btn-break { background: var(--break); color: white; }
-        .btn-end { background: #0f172a; color: var(--danger); grid-column: span 2; border: 3px solid var(--danger); }
-        .btn-huge:hover { transform: translateY(-5px); filter: brightness(1.2); }
-
-        #media-frame { width: 100%; max-height: 400px; border-radius: 25px; overflow: hidden; margin: 25px 0; display: none; border: 5px solid #334155; background: #000; }
-        .list-item { background: rgba(0,0,0,0.3); padding: 22px 35px; border-radius: 18px; margin-bottom: 15px; display: flex; justify-content: space-between; border-left: 8px solid var(--primary); font-size: 1.3rem; }
-        .pts-badge { font-weight: 900; color: var(--primary); font-size: 1.8rem; }
-
-        #login-gate { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .tab-active { background-color: #1e293b; border-left: 4px solid #3b82f6; }
         .hidden { display: none !important; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body>
-    <audio id="audio-engine" style="display:none"></audio>
+<body class="h-screen flex flex-col overflow-hidden">
 
-    <div id="login-gate">
-        <div style="background: var(--card); padding: 70px; border-radius: 40px; text-align: center; width: 450px; border: 1px solid #334155;">
-            <h1 style="margin:0 0 10px; font-weight: 800; font-size: 3rem; color: var(--primary);">HOST LOGIN</h1>
-            <input type="text" id="usr" placeholder="Username" style="width:100%; padding:20px; margin:15px 0; border-radius:15px; border:none; background:#0f172a; color:white; font-size:1.1rem;">
-            <input type="password" id="pwd" placeholder="Password" style="width:100%; padding:20px; margin:15px 0; border-radius:15px; border:none; background:#0f172a; color:white; font-size:1.1rem;">
-            <button onclick="loginMaster()" class="btn-huge btn-start" style="width:100%; margin-top:20px;">Initialize Dashboard</button>
+    <div id="login-screen" class="flex-1 flex items-center justify-center">
+        <div class="glass-panel p-8 rounded-xl w-96 shadow-2xl">
+            <h1 class="text-3xl font-bold mb-6 text-center text-blue-400">Master Login</h1>
+            <input type="text" id="host-user" placeholder="Host Username (e.g., host1)" class="w-full p-3 mb-4 rounded bg-slate-800 border border-slate-600 focus:outline-none focus:border-blue-500">
+            <input type="password" id="host-pass" placeholder="Password" class="w-full p-3 mb-6 rounded bg-slate-800 border border-slate-600 focus:outline-none focus:border-blue-500">
+            <button onclick="loginMaster()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded transition-colors">Login & Create Room</button>
         </div>
     </div>
 
-    <div id="sidebar">
-        <div class="room-info"><label>ROOM CODE</label><h2 id="r-code">----</h2></div>
-        <button class="tab-btn active" onclick="showTab('q-view', this)">🎮 Control Panel</button>
-        <button class="tab-btn" onclick="showTab('f-view', this)">⚡ Activity Feed</button>
-        <button class="tab-btn" onclick="showTab('l-view', this)">🏆 Leaderboard</button>
-        <button class="tab-btn" onclick="showTab('s-view', this)">⚙️ Settings</button>
-        <div style="margin-top: auto; border-top: 2px solid #334155; padding-top: 30px;">
-            <input type="file" id="csv" style="display:none" accept=".csv">
-            <button onclick="document.getElementById('csv').click()" class="tab-btn" style="width:100%; background: #475569; justify-content: center;">📁 LOAD CSV QUIZ</button>
-        </div>
-    </div>
+    <div id="dashboard-screen" class="hidden h-full flex flex-col">
+        
+        <header class="glass-panel p-4 flex justify-between items-center shadow-md z-10">
+            <div class="flex items-center space-x-6">
+                <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">PUB QUIZ PRO</h1>
+                <div class="bg-slate-800 px-4 py-1 rounded-full border border-slate-600">
+                    <span class="text-slate-400 text-sm uppercase">Room Code:</span>
+                    <span id="room-code-display" class="ml-2 font-mono text-xl font-bold text-yellow-400">----</span>
+                </div>
+            </div>
+            <div class="flex space-x-4 items-center">
+                <button onclick="toggleBreak()" id="break-btn" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded font-semibold text-sm transition">Start Break</button>
+                <button onclick="declareWinner()" class="bg-yellow-600 hover:bg-yellow-500 px-4 py-2 rounded font-semibold text-sm transition text-white">Declare Winner</button>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded font-semibold text-sm transition">Log Out</button>
+            </div>
+        </header>
 
-    <div id="main">
-        <div id="q-view" class="view active">
-            <div class="card">
-                <div class="q-header"><span id="q-meta">Ready to Host</span><div id="timer-box">00s</div></div>
-                <h1 id="q-text">Upload CSV to begin your quiz.</h1>
-                <div id="media-frame"><img id="media-preview" style="width:100%; height:100%; object-fit:contain;"></div>
-                <div id="choices-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"></div>
-            </div>
-            <div class="control-grid">
-                <button class="btn-huge btn-next" onclick="send('PREP')">⏭️ Next Question</button>
-                <button class="btn-huge btn-start" onclick="send('START')">🏁 Start Question</button>
-                <button class="btn-huge btn-stop" onclick="send('STOP')">⛔ Stop / Lock In</button>
-                <button class="btn-huge btn-break" onclick="send('BREAK')">☕ Take a Break</button>
-                <button class="btn-huge btn-end" onclick="confirmReset()">🛑 End Quiz / Reset Room</button>
-            </div>
+        <div class="flex-1 flex overflow-hidden">
+            
+            <aside class="w-72 glass-panel border-r border-slate-700 flex flex-col">
+                <div class="flex border-b border-slate-700">
+                    <button onclick="switchTab('teams')" id="tab-teams" class="flex-1 py-3 text-sm font-bold tab-active transition">Teams Status</button>
+                    <button onclick="switchTab('leaderboard')" id="tab-leaderboard" class="flex-1 py-3 text-sm font-bold bg-slate-800 transition">Leaderboard</button>
+                </div>
+                
+                <div id="content-teams" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    </div>
+                
+                <div id="content-leaderboard" class="hidden flex-1 overflow-y-auto p-4 space-y-3">
+                    </div>
+            </aside>
+
+            <main class="flex-1 flex flex-col relative">
+                
+                <div id="csv-overlay" class="absolute inset-0 bg-slate-900/90 z-20 flex flex-col items-center justify-center backdrop-blur-sm">
+                    <h2 class="text-2xl font-bold mb-4">Upload Question Pack</h2>
+                    <input type="file" id="csv-upload" accept=".csv" class="mb-4 block w-full max-w-md text-sm text-slate-400 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500">
+                </div>
+
+                <div class="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center">
+                    <div id="current-question-container" class="w-full max-w-4xl text-center hidden">
+                        <span id="cq-type" class="text-blue-400 font-bold uppercase tracking-wider text-sm mb-2 block"></span>
+                        <h2 id="cq-text" class="text-4xl font-black mb-8 leading-tight text-white"></h2>
+                        <div id="cq-media" class="mb-6 flex justify-center"></div>
+                        <div id="cq-options" class="grid grid-cols-2 gap-4 mb-8"></div>
+                        
+                        <div class="glass-panel inline-block px-8 py-4 rounded-2xl border border-slate-600">
+                            <span class="text-slate-400 block mb-1 text-sm">Correct Answer</span>
+                            <span id="cq-answer" class="text-2xl font-bold text-green-400"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 border-t border-slate-700 flex justify-center items-center space-x-8">
+                    <div class="text-center">
+                        <span class="block text-slate-400 text-sm mb-1">Timer</span>
+                        <div id="timer-display" class="text-4xl font-mono font-bold text-white">00:30</div>
+                    </div>
+                    <div class="flex flex-col space-y-2">
+                        <div class="flex space-x-2">
+                            <button onclick="startTimer()" class="bg-green-600 hover:bg-green-500 px-6 py-2 rounded font-bold shadow">Start</button>
+                            <button onclick="stopTimer()" class="bg-red-600 hover:bg-red-500 px-6 py-2 rounded font-bold shadow">Stop</button>
+                        </div>
+                        <button onclick="addTime(15)" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-sm shadow">+15 Seconds</button>
+                    </div>
+                </div>
+            </main>
         </div>
 
-        <div id="f-view" class="view"><h1>Activity Feed</h1><div id="feed"></div></div>
-        <div id="l-view" class="view">
-            <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px;">
-                <h1>Tournament Standings</h1>
-                <button onclick="send('RESULTS')" class="btn-huge btn-start" style="padding: 10px 30px; font-size: 1rem;">📢 Broadcast Winners</button>
+        <footer class="h-32 glass-panel border-t border-slate-700 flex">
+            <div class="flex-1 border-r border-slate-700 p-4 flex flex-col justify-center">
+                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Next Question (Press Space to Send)</span>
+                <p id="nq-text" class="text-lg font-semibold text-slate-300 truncate">Load CSV to begin...</p>
+                <div class="mt-2 flex space-x-4 text-sm">
+                    <label class="flex items-center space-x-2">
+                        <span class="text-slate-400">Pts:</span>
+                        <input type="number" id="mod-points" class="w-16 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white">
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <span class="text-slate-400">Pen:</span>
+                        <input type="number" id="mod-penalty" class="w-16 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white">
+                    </label>
+                    <button onclick="sendNextQuestion()" class="ml-auto bg-blue-600 hover:bg-blue-500 px-6 py-1 rounded font-bold">Send to Players</button>
+                </div>
             </div>
-            <div id="leaderboard"></div>
-        </div>
-        <div id="s-view" class="view">
-            <h1>Engine Settings</h1>
-            <div class="card"><h3>Timer (Seconds)</h3><input type="number" id="s-time" value="20" onchange="saveSettings()" style="padding:15px; border-radius:10px; background:#0f172a; color:white; border:none; width:100px; font-size:1.5rem; font-weight:800;"></div>
-        </div>
+
+            <div class="w-80 p-4 flex flex-col justify-center space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold text-slate-300">Buzzer Volume</span>
+                    <input type="range" id="vol-buzzer" min="0" max="100" value="100" class="w-32">
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold text-slate-300">Countdown Audio</span>
+                    <div class="flex items-center space-x-2">
+                        <input type="range" id="vol-timer" min="0" max="100" value="80" class="w-24">
+                        <button onclick="toggleMute('timer')" id="mute-timer-btn" class="text-xs bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">Mute</button>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script>
-        let ws, room = "", qIdx = -1, quizData = [];
-        const audio = document.getElementById('audio-engine');
+        // --- STATE & CONFIG ---
+        const BACKEND_URL = 'https://my-pub-quiz.onrender.com'; 
+        const WS_URL = 'wss://my-pub-quiz.onrender.com/ws/master/';
+        
+        let ws;
+        let roomCode = "";
+        let questions = [];
+        let currentQuestionIndex = -1;
+        let gameScores = {};
+        let teamStatus = {}; // Tracks who has answered
+        let timerInterval;
+        let timeLeft = 30;
+        let isBreak = false;
 
-        // FIX: Re-named to avoid conflicts
+        // Mock sounds (replace with actual URLs later)
+        const timerAudio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+        
+        // --- INIT ---
+        document.getElementById('csv-upload').addEventListener('change', handleCSVUpload);
+
+        // Keyboard Shortcut: Space to send next question
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !document.getElementById('dashboard-screen').classList.contains('hidden')) {
+                // Prevent scrolling
+                e.preventDefault(); 
+                sendNextQuestion();
+            }
+        });
+
+        // --- AUTH & WEBSOCKET ---
         async function loginMaster() {
-            const u = document.getElementById('usr').value;
-            const p = document.getElementById('pwd').value;
-            const res = await fetch('https://my-pub-quiz.onrender.com/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username: u, password: p})
-            });
-            const data = await res.json();
-            if(data.success) {
-                room = data.room_code;
-                localStorage.setItem('quiz_room', room);
-                location.reload(); 
-            } else {
-                alert("Login Failed. Check credentials.");
-            }
-        }
+            const user = document.getElementById('host-user').value;
+            const pass = document.getElementById('host-pass').value;
 
-        window.onload = () => {
-            if(localStorage.getItem('quiz_room')) {
-                room = localStorage.getItem('quiz_room');
-                document.getElementById('login-gate').classList.add('hidden');
-                document.getElementById('r-code').innerText = room;
-                if(localStorage.getItem('s_time')) document.getElementById('s-time').value = localStorage.getItem('s_time');
-                connectWS();
-            }
-        };
-
-        function connectWS() {
-            ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${room}/master/M`);
-            ws.onmessage = (e) => {
-                const msg = JSON.parse(e.data);
-                if(msg.type === "FEED") updateFeed(msg.payload);
-                if(msg.type === "SCORES") updateLeaderboard(msg.payload);
-            };
-            ws.onclose = () => setTimeout(connectWS, 2000);
-        }
-
-        function send(type) {
-            if(type === 'PREP') { qIdx++; audio.pause(); audio.src = ""; }
-            if(qIdx >= quizData.length && type === 'PREP') return alert("End of CSV Quiz!");
-            
-            const q = quizData[qIdx];
-            let payload = { idx: qIdx };
-            
-            if(type === 'PREP' && q) {
-                payload = { idx: qIdx, title: q.title, type: q.type, choices: q.choices.split('|'), med: q.med };
-            }
-            if(type === 'START') {
-                payload.limit = document.getElementById('s-time').value;
-                if(q && q.med && (q.med.includes('.mp3') || q.med.includes('.ogg'))) { audio.src = q.med; audio.play(); }
-                let c = payload.limit;
-                const t = setInterval(() => {
-                    c--; document.getElementById('timer-box').innerText = (c<0?0:c)+"s";
-                    if(c<=0) clearInterval(t);
-                }, 1000);
-            }
-            if(type === 'STOP') audio.pause();
-            ws.send(JSON.stringify({type, payload}));
-            if(type === 'PREP') updateUI();
-        }
-
-        document.getElementById('csv').onchange = (e) => {
-            const r = new FileReader();
-            r.onload = (ev) => {
-                const lines = ev.target.result.split(/\r?\n/).filter(l => l.trim());
-                quizData = lines.slice(1).map(l => {
-                    const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    let rt = (c[1]||'multi').toLowerCase();
-                    return {
-                        title: c[2].replace(/"/g,""), type: rt.includes('seq')?'sequence':(rt.includes('multi')?'multi':'text'),
-                        correct: c[3].replace(/"/g,""), pts: c[4]||10, pen: c[5]||0, med: c[6]?c[6].trim():"",
-                        choices: [c[7],c[8],c[9],c[10],c[11],c[12]].filter(x=>x && x.trim()).join('|').replace(/"/g,"")
-                    };
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
                 });
-                ws.send(JSON.stringify({type:"LOAD", payload: quizData}));
-                alert("Loaded " + quizData.length + " questions!");
-                updateUI();
+
+                if (res.ok) {
+                    // Generate a random 4-letter room code
+                    roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+                    connectWebSocket(roomCode);
+                    
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('dashboard-screen').classList.remove('hidden');
+                    document.getElementById('room-code-display').innerText = roomCode;
+                } else {
+                    alert("Invalid Host Credentials");
+                }
+            } catch (err) {
+                alert("Cannot connect to backend. Is it awake?");
+            }
+        }
+
+        function connectWebSocket(code) {
+            ws = new WebSocket(`${WS_URL}${code}`);
+            
+            ws.onopen = () => console.log("Connected to room:", code);
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === "player_joined") {
+                    gameScores[data.team_name] = gameScores[data.team_name] || 0;
+                    teamStatus[data.team_name] = { answered: false, buzzer: null };
+                    updateSidebars();
+                } 
+                else if (data.type === "answer_submitted") {
+                    handlePlayerAnswer(data);
+                }
+                else if (data.type === "buzzer_selected") {
+                    if (teamStatus[data.team_name]) {
+                        teamStatus[data.team_name].buzzer = data.selection;
+                    }
+                }
             };
-            r.readAsText(e.target.files[0]);
-        };
 
-        function updateUI() {
-            const q = quizData[qIdx];
-            if(!q) return;
-            document.getElementById('q-meta').innerText = `QUESTION ${qIdx+1} / ${quizData.length} [${q.type.toUpperCase()}]`;
-            document.getElementById('q-text').innerText = q.title;
-            const mb = document.getElementById('media-frame');
-            if(q.med && !q.med.includes('.mp3')) { document.getElementById('media-preview').src = q.med; mb.style.display = 'block'; }
-            else mb.style.display = 'none';
+            ws.onclose = () => {
+                console.log("Disconnected. Retrying in 3s...");
+                setTimeout(() => connectWebSocket(code), 3000);
+            };
         }
 
-        function updateFeed(d) {
-            const f = document.getElementById('feed');
-            const i = document.createElement('div');
-            i.className = "list-item";
-            i.innerHTML = `<span><b>${d.user}</b>: ${d.msg}</span> <span class="pts-badge">${d.pts>=0?'+'+d.pts:d.pts}</span>`;
-            f.prepend(i);
+        function logout() {
+            if(confirm("Log out? This will disconnect your master session.")) {
+                if(ws) ws.close();
+                location.reload();
+            }
         }
 
-        function updateLeaderboard(s) {
-            const l = document.getElementById('leaderboard'); l.innerHTML = "";
-            Object.entries(s).sort((a,b)=>b[1]-a[1]).forEach(([n, sc]) => {
-                l.innerHTML += `<div class="list-item"><span>${n}</span> <span class="pts-badge">${sc}</span></div>`;
+        // --- GAME LOGIC ---
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    questions = results.data;
+                    document.getElementById('csv-overlay').classList.add('hidden');
+                    prepareNextQuestion();
+                }
             });
         }
 
-        function showTab(id, btn) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); btn.classList.add('active');
+        function prepareNextQuestion() {
+            if (currentQuestionIndex + 1 < questions.length) {
+                const nextQ = questions[currentQuestionIndex + 1];
+                document.getElementById('nq-text').innerText = `${nextQ['Question number']}. ${nextQ['Question']}`;
+                document.getElementById('mod-points').value = nextQ['Points'];
+                document.getElementById('mod-penalty').value = nextQ['Penalty'] || 0;
+            } else {
+                document.getElementById('nq-text').innerText = "END OF QUIZ";
+            }
         }
 
-        function saveSettings() { localStorage.setItem('s_time', document.getElementById('s-time').value); }
-        function confirmReset() { if(confirm("End Quiz & Reset?")) { localStorage.clear(); location.reload(); } }
+        function sendNextQuestion() {
+            if (currentQuestionIndex + 1 >= questions.length) return;
+            
+            currentQuestionIndex++;
+            const q = questions[currentQuestionIndex];
+            
+            // Apply customized points/penalties
+            q['Points'] = document.getElementById('mod-points').value;
+            q['Penalty'] = document.getElementById('mod-penalty').value;
+
+            // Update UI Center
+            document.getElementById('current-question-container').classList.remove('hidden');
+            document.getElementById('cq-type').innerText = q['Question type'];
+            document.getElementById('cq-text').innerText = q['Question'];
+            document.getElementById('cq-answer').innerText = q['Correct answer'];
+            
+            // Handle Media
+            const mediaContainer = document.getElementById('cq-media');
+            if (q['Media LINK']) {
+                mediaContainer.innerHTML = `<img src="${q['Media LINK']}" class="max-h-64 rounded-lg border-2 border-slate-600 shadow-lg">`;
+            } else {
+                mediaContainer.innerHTML = "";
+            }
+
+            // Options Display
+            const optsContainer = document.getElementById('cq-options');
+            optsContainer.innerHTML = "";
+            ['Answer A', 'Answer B', 'Answer C', 'Answer D', 'Answer E', 'Answer F'].forEach(opt => {
+                if(q[opt]) {
+                    optsContainer.innerHTML += `<div class="bg-slate-800 p-3 rounded text-sm text-slate-300 border border-slate-700">${q[opt]}</div>`;
+                }
+            });
+
+            // Reset Team Answer Status
+            for(let team in teamStatus) teamStatus[team].answered = false;
+            updateSidebars();
+
+            // Send via WS
+            if(ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    action: "send_question",
+                    question_data: q
+                }));
+            }
+
+            timeLeft = 30; // Reset timer display
+            updateTimerDisplay();
+            prepareNextQuestion();
+        }
+
+        function handlePlayerAnswer(data) {
+            const { team_name, answer, is_first } = data;
+            
+            // Mark as answered
+            if(teamStatus[team_name]) teamStatus[team_name].answered = true;
+            
+            // Fastest finger logic & Sound
+            if (is_first && teamStatus[team_name]?.buzzer) {
+                const vol = document.getElementById('vol-buzzer').value / 100;
+                // Play specific buzzer logic here based on teamStatus[team_name].buzzer.sound
+                console.log(`Buzzer played for ${team_name} at volume ${vol}`);
+            }
+
+            // Auto-grade logic (simplified for POC, you can expand string matching)
+            const correctAns = questions[currentQuestionIndex]['Correct answer'].toString().toLowerCase();
+            const playerAns = answer.toString().toLowerCase();
+            const pts = parseInt(questions[currentQuestionIndex]['Points']);
+            const pen = parseInt(questions[currentQuestionIndex]['Penalty']);
+
+            // Supports first letter matching as requested
+            if (playerAns === correctAns || playerAns === correctAns.charAt(0)) {
+                gameScores[team_name] += pts;
+                if (is_first) gameScores[team_name] += 5; // Fast finger bonus
+            } else {
+                gameScores[team_name] -= pen;
+            }
+
+            // Send updated scores to players
+            ws.send(JSON.stringify({ action: "update_scores", scores: gameScores }));
+            updateSidebars();
+        }
+
+        // --- UI & TIMERS ---
+        function startTimer() {
+            stopTimer();
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                // Play audio in last 10 seconds if not muted
+                if (timeLeft <= 10 && timeLeft > 0 && document.getElementById('mute-timer-btn').innerText === 'Mute') {
+                    timerAudio.volume = document.getElementById('vol-timer').value / 100;
+                    timerAudio.play().catch(e=>console.log(e));
+                }
+                
+                if (timeLeft <= 0) stopTimer();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function addTime(secs) {
+            timeLeft += secs;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${m}:${s}`;
+        }
+
+        function toggleMute(target) {
+            const btn = document.getElementById(`mute-${target}-btn`);
+            if(btn.innerText === 'Mute') {
+                btn.innerText = 'Unmute';
+                btn.classList.replace('bg-slate-700', 'bg-red-600');
+            } else {
+                btn.innerText = 'Mute';
+                btn.classList.replace('bg-red-600', 'bg-slate-700');
+            }
+        }
+
+        // --- SIDEBAR TABS ---
+        function switchTab(tab) {
+            document.getElementById('tab-teams').className = tab === 'teams' ? 'flex-1 py-3 text-sm font-bold tab-active transition' : 'flex-1 py-3 text-sm font-bold bg-slate-800 transition text-slate-400';
+            document.getElementById('tab-leaderboard').className = tab === 'leaderboard' ? 'flex-1 py-3 text-sm font-bold tab-active transition' : 'flex-1 py-3 text-sm font-bold bg-slate-800 transition text-slate-400';
+            
+            document.getElementById('content-teams').classList.toggle('hidden', tab !== 'teams');
+            document.getElementById('content-leaderboard').classList.toggle('hidden', tab !== 'leaderboard');
+            updateSidebars();
+        }
+
+        function updateSidebars() {
+            // Teams Tab
+            const tContainer = document.getElementById('content-teams');
+            tContainer.innerHTML = "";
+            for (let team in teamStatus) {
+                const color = teamStatus[team].buzzer ? teamStatus[team].buzzer.color : '#475569';
+                const ansIcon = teamStatus[team].answered ? '✅' : '⏳';
+                tContainer.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-800 p-3 rounded border-l-4" style="border-color: ${color}">
+                        <span class="font-semibold">${team}</span>
+                        <span>${ansIcon}</span>
+                    </div>`;
+            }
+
+            // Leaderboard Tab
+            const lContainer = document.getElementById('content-leaderboard');
+            lContainer.innerHTML = "";
+            const sorted = Object.entries(gameScores).sort((a, b) => b[1] - a[1]);
+            sorted.forEach(([team, score], index) => {
+                lContainer.innerHTML += `
+                    <div class="flex justify-between items-center p-2 border-b border-slate-700">
+                        <span class="text-slate-300 font-bold">${index + 1}. ${team}</span>
+                        <span class="text-blue-400 font-black">${score} pts</span>
+                    </div>`;
+            });
+        }
+
+        // --- QUIZ FLOW ---
+        function toggleBreak() {
+            isBreak = !isBreak;
+            const btn = document.getElementById('break-btn');
+            if (isBreak) {
+                btn.innerText = "End Break";
+                btn.classList.replace('bg-slate-700', 'bg-purple-600');
+                if(ws) ws.send(JSON.stringify({ action: "trigger_break", leaderboard: gameScores }));
+                switchTab('leaderboard'); // Auto show leaderboard on break
+            } else {
+                btn.innerText = "Start Break";
+                btn.classList.replace('bg-purple-600', 'bg-slate-700');
+                if(ws) ws.send(JSON.stringify({ action: "end_break" }));
+            }
+        }
+
+        function declareWinner() {
+            if(confirm("DOUBLE CONFIRMATION: Are you sure you want to end the quiz and declare a winner?")) {
+                const sorted = Object.entries(gameScores).sort((a, b) => b[1] - a[1]);
+                const winner = sorted.length > 0 ? sorted[0][0] : "No One";
+                if(ws) ws.send(JSON.stringify({ action: "declare_winner", winner: winner }));
+                alert(`Quiz Ended! Winner is ${winner}`);
+            }
+        }
     </script>
 </body>
 </html>
