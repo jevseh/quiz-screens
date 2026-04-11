@@ -1,142 +1,412 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PLAYER | LIVE QUIZ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;800&display=swap" rel="stylesheet">
+    <title>Quiz Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Poppins', sans-serif; background: #0f172a; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; text-align: center; }
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: manipulation; overscroll-behavior: none; }
+        .glass-panel { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .color-btn.selected { border: 4px solid white; transform: scale(1.1); }
+        .color-btn.taken { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+        .ans-btn { transition: all 0.2s ease; }
+        .ans-btn.selected { background-color: #3b82f6; border-color: #60a5fa; transform: scale(0.98); }
+        .seq-badge { position: absolute; top: -10px; right: -10px; background: #fbbf24; color: black; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid #0f172a; }
         
-        #timer-container { width: 100%; height: 15px; background: #1e293b; position: fixed; top: 0; left: 0; }
-        #timer-bar { width: 100%; height: 100%; background: #22c55e; transition: none; }
-
-        .screen { display: none; padding: 30px; flex-direction: column; justify-content: center; height: 100%; animation: fadeIn 0.3s ease; }
-        .screen.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* JOIN SCREEN */
-        .join-box { background: #1e293b; padding: 40px; border-radius: 35px; border: 3px solid #6366f1; }
-        input { width: 100%; padding: 20px; margin: 15px 0; border-radius: 15px; background: #0f172a; color: white; border: none; font-size: 1.3rem; text-align: center; }
-        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 25px 0; }
-        .color-dot { height: 60px; border-radius: 15px; cursor: pointer; border: 4px solid transparent; }
-        .color-dot.selected { border-color: white; transform: scale(1.1); box-shadow: 0 0 20px white; }
-
-        /* QUIZ SCREEN */
-        #q-title { font-size: 2rem; font-weight: 800; margin-bottom: 40px; line-height: 1.2; }
-        .choices-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-        .btn-choice { 
-            padding: 24px; border-radius: 20px; border: 4px solid #334155; 
-            font-size: 1.5rem; font-weight: 800; color: white; transition: 0.2s; 
-            text-align: left; display: flex; align-items: center; gap: 20px;
-        }
-        .letter-box { background: white; color: black; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 1.3rem; }
+        /* Animations */
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        .animate-slide { animation: slideIn 0.4s ease-out forwards; }
         
-        /* COLORS FROM VISION */
-        .btn-A { background: #ef4444; } .btn-B { background: #3b82f6; } .btn-C { background: #10b981; } 
-        .btn-D { background: #f59e0b; } .btn-E { background: #8b5cf6; } .btn-F { background: #ec4899; }
-        .btn-choice:disabled { opacity: 0.4; }
-        #break-screen { background: #8b5cf6; }
+        #progress-bar { transition: width 1s linear; }
     </style>
 </head>
-<body>
-    <div id="timer-container"><div id="timer-bar"></div></div>
+<body class="h-screen flex flex-col overflow-hidden">
 
-    <div id="join-screen" class="screen active">
-        <div class="join-box">
-            <h1 style="font-weight: 800;">JOIN THE GAME</h1>
-            <input type="text" id="join-code" placeholder="Enter Room Code">
-            <input type="text" id="join-name" placeholder="Enter Your Name">
-            <div class="color-grid">
-                <div class="color-dot" style="background:#ef4444" onclick="selCol('#ef4444', this)"></div>
-                <div class="color-dot" style="background:#3b82f6" onclick="selCol('#3b82f6', this)"></div>
-                <div class="color-dot" style="background:#10b981" onclick="selCol('#10b981', this)"></div>
-                <div class="color-dot" style="background:#f59e0b" onclick="selCol('#f59e0b', this)"></div>
-            </div>
-            <button onclick="join()" class="btn-choice btn-B" style="justify-content:center;">CONNECT</button>
+    <div id="login-screen" class="flex-1 overflow-y-auto p-6 flex flex-col items-center">
+        <h1 class="text-4xl font-black mt-8 mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 text-center">JOIN QUIZ</h1>
+        
+        <div class="w-full max-w-sm space-y-4">
+            <input type="text" id="room-code" placeholder="4-Letter Room Code" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-600 text-center text-xl font-bold uppercase tracking-widest focus:outline-none focus:border-blue-500">
+            <input type="text" id="team-name" placeholder="Team Name" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-600 text-center text-xl font-bold focus:outline-none focus:border-blue-500">
+            
+            <button onclick="checkRoomAndLoadBuzzers()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-xl mt-4 transition">Next step: Pick Buzzer</button>
+        </div>
+
+        <div id="buzzer-setup" class="w-full max-w-sm mt-8 hidden flex-col items-center pb-12">
+            <h3 class="text-lg font-bold mb-4 text-slate-300">1. Pick Team Color</h3>
+            <div id="color-grid" class="grid grid-cols-5 gap-3 mb-8 w-full">
+                </div>
+
+            <h3 class="text-lg font-bold mb-4 text-slate-300">2. Pick Buzzer Sound</h3>
+            <select id="sound-select" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-600 font-bold mb-8 text-white focus:outline-none focus:border-blue-500">
+                </select>
+
+            <button onclick="joinGame()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black text-xl py-4 rounded-xl shadow-lg shadow-blue-500/50">ENTER GAME</button>
         </div>
     </div>
 
-    <div id="waiting" class="screen"><h1>CONNECTED</h1><p>Wait for the host to start...</p></div>
-    <div id="break-screen" class="screen"><h1>INTERMISSION</h1><p>Relax, the host has paused the game.</p></div>
+    <div id="game-screen" class="hidden h-full flex flex-col relative">
+        
+        <header class="glass-panel p-4 flex justify-between items-center shadow-md z-10">
+            <div>
+                <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Team</span>
+                <span id="display-team" class="text-xl font-black"></span>
+            </div>
+            <div class="text-right">
+                <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Score</span>
+                <span id="display-score" class="text-2xl font-black text-blue-400">0</span>
+            </div>
+        </header>
 
-    <div id="quiz-screen" class="screen">
-        <h2 id="q-title">Question Title</h2>
-        <div id="choices-container" class="choices-grid"></div>
-    </div>
+        <div id="waiting-state" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <div class="animate-pulse w-24 h-24 mb-6 rounded-full border-4 border-blue-500 flex items-center justify-center">
+                <span class="text-4xl">⏳</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-300 mb-2">Waiting for Quizmaster</h2>
+            <p class="text-slate-500">Eyes on the big screen!</p>
+        </div>
 
-    <div id="text-screen" class="screen">
-        <h2>TYPE YOUR ANSWER</h2>
-        <input type="text" id="t-ans">
-        <button onclick="submitText()" class="btn-choice btn-C" style="justify-content:center; margin-top:20px;">SUBMIT</button>
+        <main id="question-state" class="hidden flex-1 flex flex-col p-4 overflow-y-auto">
+            <div class="w-full bg-slate-800 h-2 rounded-full mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-blue-500 h-full w-full"></div>
+            </div>
+
+            <div class="flex justify-between items-end mb-4">
+                <span id="q-number" class="text-slate-400 font-bold">Q?</span>
+                <button id="gamble-btn" onclick="toggleGamble()" class="hidden bg-purple-600 px-3 py-1 rounded text-xs font-bold shadow shadow-purple-900/50">GAMBLE +</button>
+            </div>
+            
+            <h2 id="q-text" class="text-2xl font-black mb-4 leading-snug"></h2>
+            <div id="q-media" class="mb-6 rounded-lg overflow-hidden flex justify-center"></div>
+
+            <div id="input-area" class="flex-1 flex flex-col space-y-3 pb-24">
+                </div>
+        </main>
+
+        <footer id="controls-footer" class="hidden fixed bottom-0 left-0 right-0 glass-panel p-4 border-t border-slate-700 flex space-x-3">
+            <button onclick="redoSelection()" class="flex-1 bg-slate-700 hover:bg-slate-600 py-4 rounded-xl font-bold text-slate-300">REDO</button>
+            <button onclick="submitAnswer()" class="flex-[2] bg-green-600 hover:bg-green-500 py-4 rounded-xl font-black text-xl shadow-lg shadow-green-900/50" id="submit-btn">SUBMIT</button>
+        </footer>
+        
+        <div id="submitted-overlay" class="hidden absolute inset-0 bg-slate-900/95 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
+            <span class="text-6xl mb-4">✅</span>
+            <h2 class="text-3xl font-black text-green-400">Answer Locked!</h2>
+            <p class="text-slate-400 mt-2">Waiting for time to expire...</p>
+        </div>
     </div>
 
     <script>
-        let ws, room, user, color = "#6366f1", hasAns = false;
+        // --- CONFIG & STATE ---
+        const BACKEND_URL = 'https://my-pub-quiz.onrender.com';
+        const WS_URL = 'wss://my-pub-quiz.onrender.com/ws/player/';
         
-        function selCol(c, el) { 
-            color = c; 
-            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
-            el.classList.add('selected');
+        let ws;
+        let roomCode = "";
+        let teamName = "";
+        let selectedColor = "";
+        let selectedSound = "";
+        
+        // Game State
+        let currentQuestion = null;
+        let currentSelections = []; // Holds selected answers/sequence
+        let isGambleActive = false;
+        let timerInterval;
+        let teamRank = 1; // Used for gamble mechanic
+        
+        // Setup Mocks
+        const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#ffffff', '#94a3b8', '#fbbf24', '#34d399', '#818cf8'];
+        const sounds = ['Airhorn', 'Bell Ding', 'Buzzer Wrong', 'Cash Register', 'Dog Bark', 'Cat Meow', 'Glass Break', 'Laser', 'Magic Wand', 'Quack', 'Siren', 'Spring Boing', 'Ta Da', 'Whip', 'Whistle', 'Yeehaw', 'Zombie', 'Gong', 'Drumroll', 'Crickets'];
+
+        // --- INIT UI ---
+        const colorGrid = document.getElementById('color-grid');
+        colors.forEach(color => {
+            const btn = document.createElement('div');
+            btn.className = 'color-btn w-full aspect-square rounded-full cursor-pointer shadow-md';
+            btn.style.backgroundColor = color;
+            btn.onclick = () => selectColor(btn, color);
+            colorGrid.appendChild(btn);
+        });
+
+        const soundSelect = document.getElementById('sound-select');
+        sounds.forEach((sound, index) => {
+            soundSelect.innerHTML += `<option value="sound${index+1}">${sound}</option>`;
+        });
+
+        // --- AUTH & JOIN LOGIC ---
+        async function checkRoomAndLoadBuzzers() {
+            roomCode = document.getElementById('room-code').value.toUpperCase();
+            teamName = document.getElementById('team-name').value.trim();
+
+            if(roomCode.length !== 4 || teamName === "") {
+                alert("Please enter a valid 4-letter room code and a team name.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/room/${roomCode}`);
+                const data = await res.json();
+
+                if(data.status === "exists") {
+                    // Disable taken colors
+                    const takenColors = Object.values(data.unavailable_buzzers).map(b => b.color);
+                    document.querySelectorAll('.color-btn').forEach(btn => {
+                        if(takenColors.includes(btn.style.backgroundColor)) {
+                            btn.classList.add('taken');
+                        }
+                    });
+
+                    document.getElementById('buzzer-setup').classList.remove('hidden');
+                    document.getElementById('buzzer-setup').classList.add('flex');
+                    document.getElementById('room-code').disabled = true;
+                    document.getElementById('team-name').disabled = true;
+                } else {
+                    alert("Room not found. Check the code on the big screen.");
+                }
+            } catch (err) {
+                alert("Error connecting to server.");
+            }
         }
 
-        function join() {
-            room = document.getElementById('join-code').value;
-            user = document.getElementById('join-name').value;
-            if(!room || !user) return alert("Fill everything!");
-            localStorage.setItem('quiz_user', user);
-            connect();
+        function selectColor(element, color) {
+            if(element.classList.contains('taken')) return;
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedColor = color;
         }
 
-        function connect() {
-            ws = new WebSocket(`wss://my-pub-quiz.onrender.com/ws/${room}/player/${user}`);
-            ws.onopen = () => show('waiting');
-            ws.onmessage = (e) => {
-                const msg = JSON.parse(e.data);
-                if(msg.type === "PREP") setupQ(msg.payload);
-                if(msg.type === "START") startTimer(msg.payload.limit);
-                if(msg.type === "STOP") lock();
-                if(msg.type === "BREAK") show('break-screen');
-                if(msg.type === "RESULTS") showResults(msg.payload);
+        function joinGame() {
+            if(!selectedColor) { alert("Please pick a team color!"); return; }
+            selectedSound = document.getElementById('sound-select').value;
+
+            // Setup UI for game
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('display-team').innerText = teamName;
+            document.getElementById('display-team').style.color = selectedColor;
+
+            connectWebSocket();
+        }
+
+        // --- WEBSOCKET LOGIC ---
+        function connectWebSocket() {
+            ws = new WebSocket(`${WS_URL}${roomCode}/${encodeURIComponent(teamName)}`);
+
+            ws.onopen = () => {
+                // Send buzzer choice
+                ws.send(JSON.stringify({
+                    action: "select_buzzer",
+                    color: selectedColor,
+                    sound: selectedSound
+                }));
+
+                // Start heartbeat
+                setInterval(() => {
+                    if(ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({action: "heartbeat"}));
+                }, 15000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === "new_question") {
+                    renderQuestion(data.data);
+                } else if (data.type === "score_update") {
+                    updateScore(data.scores);
+                } else if (data.type === "break_started") {
+                    showWaitingState("Take a break! Check the leaderboard.");
+                } else if (data.type === "break_ended") {
+                    showWaitingState("Break over. Get ready!");
+                } else if (data.type === "quiz_ended") {
+                    showWaitingState(`QUIZ OVER! Winner: ${data.winner}`);
+                }
+            };
+
+            ws.onclose = () => {
+                showWaitingState("Disconnected. Trying to reconnect...");
+                setTimeout(connectWebSocket, 3000);
             };
         }
 
-        function setupQ(q) {
-            hasAns = false;
-            document.getElementById('timer-bar').style.transition = 'none';
-            document.getElementById('timer-bar').style.width = '100%';
-            show(q.type === 'text' ? 'text-screen' : 'quiz-screen');
-            document.getElementById('q-title').innerText = q.title;
-            const c = document.getElementById('choices-container'); c.innerHTML = "";
-            q.choices.forEach((choice, i) => {
-                const char = String.fromCharCode(65 + i);
-                const b = document.createElement('button');
-                b.className = `btn-choice btn-${char}`;
-                b.innerHTML = `<div class="letter-box">${char}</div> <span>${choice}</span>`;
-                b.onclick = () => { if(!hasAns) submit(char, b); };
-                c.appendChild(b);
+        // --- GAME LOGIC & RENDERING ---
+        function updateScore(scores) {
+            if(scores[teamName] !== undefined) {
+                document.getElementById('display-score').innerText = scores[teamName];
+            }
+            
+            // Calculate rank for gamble mechanic
+            const sortedTeams = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            teamRank = sortedTeams.findIndex(t => t[0] === teamName) + 1;
+        }
+
+        function showWaitingState(msg = "Waiting for Quizmaster") {
+            document.getElementById('question-state').classList.add('hidden');
+            document.getElementById('controls-footer').classList.add('hidden');
+            document.getElementById('waiting-state').classList.remove('hidden');
+            document.getElementById('waiting-state').querySelector('h2').innerText = msg;
+            document.getElementById('submitted-overlay').classList.add('hidden');
+            stopTimer();
+        }
+
+        function renderQuestion(q) {
+            currentQuestion = q;
+            currentSelections = [];
+            isGambleActive = false;
+            
+            document.getElementById('waiting-state').classList.add('hidden');
+            document.getElementById('submitted-overlay').classList.add('hidden');
+            document.getElementById('question-state').classList.remove('hidden');
+            document.getElementById('controls-footer').classList.remove('hidden');
+            
+            document.getElementById('q-number').innerText = `Q${q['Question number']}`;
+            document.getElementById('q-text').innerText = q['Question'];
+
+            // Gamble Button visibility (Only if below 3rd place)
+            const gambleBtn = document.getElementById('gamble-btn');
+            if(teamRank > 3) gambleBtn.classList.remove('hidden');
+            else gambleBtn.classList.add('hidden');
+            gambleBtn.classList.remove('bg-yellow-500', 'text-black'); // reset state
+
+            // Media
+            const mediaDiv = document.getElementById('q-media');
+            if(q['Media LINK']) {
+                mediaDiv.innerHTML = `<img src="${q['Media LINK']}" class="w-full h-auto rounded-lg">`;
+            } else {
+                mediaDiv.innerHTML = "";
+            }
+
+            // Inputs
+            const inputArea = document.getElementById('input-area');
+            inputArea.innerHTML = "";
+
+            const qType = q['Question type'].toLowerCase();
+            const options = ['Answer A', 'Answer B', 'Answer C', 'Answer D', 'Answer E', 'Answer F']
+                .map(k => q[k]).filter(v => v); // Get non-empty answers
+
+            if (qType.includes('text') || qType.includes('math')) {
+                const inputType = qType.includes('math') ? 'number' : 'text';
+                inputArea.innerHTML = `<input type="${inputType}" id="text-answer" class="w-full p-4 text-xl rounded-xl bg-slate-800 border border-slate-600 focus:border-blue-500 text-center font-bold outline-none animate-slide">`;
+            } 
+            else if (qType.includes('multiple choice') || qType.includes('sequence')) {
+                options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'ans-btn w-full p-4 rounded-xl bg-slate-800 border-2 border-slate-700 text-left font-semibold text-lg relative animate-slide';
+                    btn.style.animationDelay = `${index * 0.05}s`;
+                    btn.innerText = opt;
+                    
+                    if(qType.includes('sequence')) {
+                        btn.onclick = () => handleSequenceClick(btn, opt);
+                    } else {
+                        btn.onclick = () => handleMultipleChoiceClick(btn, opt);
+                    }
+                    inputArea.appendChild(btn);
+                });
+            }
+
+            startTimer();
+        }
+
+        function handleMultipleChoiceClick(btn, value) {
+            // Toggle logic for multiple choice (supports more than 1 correct answer)
+            if(currentSelections.includes(value)) {
+                currentSelections = currentSelections.filter(v => v !== value);
+                btn.classList.remove('selected');
+            } else {
+                currentSelections.push(value);
+                btn.classList.add('selected');
+            }
+        }
+
+        function handleSequenceClick(btn, value) {
+            if(!currentSelections.includes(value)) {
+                currentSelections.push(value);
+                btn.classList.add('selected');
+                
+                // Add badge
+                const badge = document.createElement('div');
+                badge.className = 'seq-badge';
+                badge.innerText = currentSelections.length;
+                btn.appendChild(badge);
+            }
+        }
+
+        function redoSelection() {
+            currentSelections = [];
+            document.getElementById('text-answer') && (document.getElementById('text-answer').value = "");
+            
+            document.querySelectorAll('.ans-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                const badge = btn.querySelector('.seq-badge');
+                if(badge) badge.remove();
             });
         }
 
-        function startTimer(sec) {
-            const b = document.getElementById('timer-bar');
-            b.style.transition = `width ${sec}s linear`;
-            setTimeout(() => { b.style.width = '0%'; }, 100);
+        function toggleGamble() {
+            isGambleActive = !isGambleActive;
+            const btn = document.getElementById('gamble-btn');
+            if(isGambleActive) {
+                btn.classList.add('bg-yellow-500', 'text-black');
+                btn.classList.remove('bg-purple-600');
+            } else {
+                btn.classList.add('bg-purple-600');
+                btn.classList.remove('bg-yellow-500', 'text-black');
+            }
         }
 
-        function submit(ans, btn) {
-            if(hasAns) return; hasAns = true;
-            ws.send(JSON.stringify({type: "ANSWER", payload: { answer: ans }}));
-            lock(); btn.style.border = "6px solid white";
+        function submitAnswer() {
+            let finalAnswer = "";
+            const qType = currentQuestion['Question type'].toLowerCase();
+
+            if (qType.includes('text') || qType.includes('math')) {
+                finalAnswer = document.getElementById('text-answer').value.trim();
+            } else if (qType.includes('sequence')) {
+                // Return just the array of strings in order, backend can match
+                finalAnswer = currentSelections.join(","); 
+            } else {
+                // Multiple choice
+                finalAnswer = currentSelections.join(",");
+            }
+
+            if(finalAnswer === "" && currentSelections.length === 0) return;
+
+            // Send via WS
+            if(ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    action: "submit_answer",
+                    answer: finalAnswer,
+                    used_gamble: isGambleActive
+                }));
+            }
+
+            // Show locked screen
+            document.getElementById('submitted-overlay').classList.remove('hidden');
         }
 
-        function submitText() {
-            if(hasAns) return; hasAns = true;
-            ws.send(JSON.stringify({type: "ANSWER", payload: { answer: document.getElementById('t-ans').value }}));
-            lock();
+        // --- TIMER ---
+        function startTimer() {
+            const bar = document.getElementById('progress-bar');
+            bar.style.transition = 'none';
+            bar.style.width = '100%';
+            
+            // Force reflow
+            void bar.offsetWidth;
+            
+            bar.style.transition = 'width 30s linear';
+            bar.style.width = '0%';
+
+            clearTimeout(timerInterval);
+            timerInterval = setTimeout(() => {
+                if(document.getElementById('submitted-overlay').classList.contains('hidden')) {
+                    // Auto submit if time runs out
+                    submitAnswer();
+                }
+            }, 30000);
         }
 
-        function lock() { document.querySelectorAll('.btn-choice').forEach(b => b.disabled = true); }
-        function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+        function stopTimer() {
+            clearTimeout(timerInterval);
+            document.getElementById('progress-bar').style.width = '0%';
+        }
     </script>
 </body>
 </html>
