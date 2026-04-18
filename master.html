@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .tab-active { background-color: #1e293b; border-bottom: 2px solid #3b82f6; color: #60a5fa; }
+        .tab-active { background-color: #1e293b; border-left: 4px solid #3b82f6; }
         .hidden { display: none !important; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
@@ -18,9 +18,9 @@
     <div id="login-screen" class="flex-1 flex items-center justify-center">
         <div class="glass-panel p-8 rounded-xl w-96 shadow-2xl">
             <h1 class="text-3xl font-bold mb-6 text-center text-blue-400">Master Login</h1>
-            <input type="text" id="host-user" placeholder="Host Username" class="w-full p-3 mb-4 rounded bg-slate-800 border border-slate-600">
-            <input type="password" id="host-pass" placeholder="Password" class="w-full p-3 mb-6 rounded bg-slate-800 border border-slate-600">
-            <button onclick="loginMaster()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded">Login & Create Room</button>
+            <input type="text" id="host-user" placeholder="Host Username (e.g., host1)" class="w-full p-3 mb-4 rounded bg-slate-800 border border-slate-600 focus:outline-none focus:border-blue-500">
+            <input type="password" id="host-pass" placeholder="Password" class="w-full p-3 mb-6 rounded bg-slate-800 border border-slate-600 focus:outline-none focus:border-blue-500">
+            <button onclick="loginMaster()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded transition-colors">Login & Create Room</button>
         </div>
     </div>
 
@@ -30,27 +30,31 @@
             <div class="flex items-center space-x-6">
                 <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">PUB QUIZ PRO</h1>
                 <div class="bg-slate-800 px-4 py-1 rounded-full border border-slate-600">
-                    <span class="text-slate-400 text-sm uppercase">Room:</span>
+                    <span class="text-slate-400 text-sm uppercase">Room Code:</span>
                     <span id="room-code-display" class="ml-2 font-mono text-xl font-bold text-yellow-400">----</span>
                 </div>
             </div>
             <div class="flex space-x-4 items-center">
-                <button onclick="toggleBreak()" id="break-btn" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded font-semibold text-sm">Start Break</button>
-                <button onclick="declareWinner()" class="bg-yellow-600 hover:bg-yellow-500 px-4 py-2 rounded font-semibold text-sm text-white">Declare Winner</button>
+                <button onclick="toggleBreak()" id="break-btn" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded font-semibold text-sm transition">Start Break</button>
+                <button onclick="declareWinner()" class="bg-yellow-600 hover:bg-yellow-500 px-4 py-2 rounded font-semibold text-sm transition text-white">Declare Winner</button>
             </div>
         </header>
 
         <div class="flex-1 flex overflow-hidden">
+            
             <aside class="w-80 glass-panel border-r border-slate-700 flex flex-col">
-                <div class="flex border-b border-slate-700 bg-slate-800">
-                    <button onclick="switchTab('teams')" id="tab-teams" class="flex-1 py-3 text-sm font-bold tab-active">Live</button>
-                    <button onclick="switchTab('stats')" id="tab-stats" class="flex-1 py-3 text-sm font-bold text-slate-400">Stats</button>
-                    <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 py-3 text-sm font-bold text-slate-400">Settings</button>
+                <div class="flex border-b border-slate-700">
+                    <button onclick="switchTab('teams')" id="tab-teams" class="flex-1 py-3 text-sm font-bold tab-active transition">Live Status</button>
+                    <button onclick="switchTab('stats')" id="tab-stats" class="flex-1 py-3 text-sm font-bold bg-slate-800 transition text-slate-400">Statistics</button>
+                    <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 py-3 text-sm font-bold bg-slate-800 transition text-slate-400">Settings</button>
                 </div>
                 
-                <div id="content-teams" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
-                <div id="content-stats" class="hidden flex-1 overflow-y-auto p-4 space-y-4"></div>
+                <div id="content-teams" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    </div>
                 
+                <div id="content-stats" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
+                    </div>
+
                 <div id="content-settings" class="hidden flex-1 overflow-y-auto p-4 space-y-6">
                     <div class="bg-slate-800 p-4 rounded border border-slate-600">
                         <h3 class="text-blue-400 font-bold mb-3 border-b border-slate-600 pb-2">Game Controls</h3>
@@ -71,22 +75,23 @@
             </aside>
 
             <main class="flex-1 flex flex-col relative">
-                <div id="csv-overlay" class="absolute inset-0 bg-slate-900/90 z-20 flex flex-col items-center justify-center">
+                
+                <div id="csv-overlay" class="absolute inset-0 bg-slate-900/90 z-20 flex flex-col items-center justify-center backdrop-blur-sm">
                     <h2 class="text-2xl font-bold mb-4">Upload Question Pack</h2>
-                    <input type="file" id="csv-upload" accept=".csv" class="mb-4 block text-sm text-slate-400 file:py-3 file:px-6 file:rounded-full file:bg-blue-600 file:text-white">
+                    <input type="file" id="csv-upload" accept=".csv" class="mb-4 block w-full max-w-md text-sm text-slate-400 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500">
                 </div>
 
-                <div class="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center">
+                <div class="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center relative">
                     <div id="current-question-container" class="w-full max-w-4xl text-center hidden">
-                        <h2 id="cq-text" class="text-4xl font-black mb-6 text-white leading-tight"></h2>
-                        <div id="cq-media-controls" class="mb-6 hidden space-x-4">
-                            <button onclick="playQuestionAudio()" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-500">▶ Play Audio Track</button>
+                        <h2 id="cq-text" class="text-4xl font-black mb-8 leading-tight text-white"></h2>
+                        <div id="cq-media-controls" class="mb-4 hidden space-x-4">
+                            <button onclick="playQuestionAudio()" class="bg-blue-600 px-4 py-2 rounded font-bold">▶ Play Audio</button>
                         </div>
                         <div id="cq-options" class="grid grid-cols-2 gap-4 mb-8"></div>
                         
-                        <div class="glass-panel inline-block px-8 py-4 rounded-xl border border-slate-600">
+                        <div class="glass-panel inline-block px-8 py-4 rounded-2xl border border-slate-600">
                             <span class="text-slate-400 block mb-1 text-sm">Correct Answer</span>
-                            <span id="cq-answer" class="text-3xl font-bold text-green-400"></span>
+                            <span id="cq-answer" class="text-2xl font-bold text-green-400"></span>
                         </div>
                     </div>
                 </div>
@@ -105,30 +110,42 @@
             </main>
         </div>
 
-        <footer class="h-auto min-h-[7rem] glass-panel border-t border-slate-700 flex flex-wrap">
-            <div class="flex-1 p-4 flex flex-col justify-center border-r border-slate-700 min-w-[300px]">
-                <span class="text-xs text-slate-400 uppercase font-bold mb-2">Next Question Preview</span>
-                <p id="nq-text" class="text-lg font-semibold text-slate-300 truncate mb-3">Load CSV...</p>
-                <div class="flex flex-wrap gap-4 text-sm items-center">
-                    <label class="flex items-center space-x-2"><span class="text-slate-400">Time (s):</span> <input type="number" id="mod-time" value="30" class="w-16 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white"></label>
-                    <label class="flex items-center space-x-2"><span class="text-slate-400">Pts:</span> <input type="number" id="mod-points" class="w-16 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white"></label>
-                    <label class="flex items-center space-x-2 text-slate-300 cursor-pointer"><input type="checkbox" id="mod-fastpass" checked class="w-4 h-4"> <span>Allow Fast Pass</span></label>
-                    <button onclick="sendNextQuestion()" class="ml-auto bg-blue-600 hover:bg-blue-500 px-8 py-2 rounded font-bold text-white shadow">Send Question</button>
+        <footer class="h-32 glass-panel border-t border-slate-700 flex">
+            <div class="flex-1 border-r border-slate-700 p-4 flex flex-col justify-center">
+                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Next Question</span>
+                <p id="nq-text" class="text-lg font-semibold text-slate-300 truncate">Load CSV...</p>
+                <div class="mt-2 flex space-x-4 text-sm items-center">
+                    <label class="flex items-center space-x-2">
+                        <span class="text-slate-400">Time:</span>
+                        <input type="number" id="mod-time" value="30" class="w-16 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white">
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <span class="text-slate-400">Pts:</span>
+                        <input type="number" id="mod-points" class="w-16 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white">
+                    </label>
+                    <label class="flex items-center space-x-2 text-slate-300 cursor-pointer">
+                        <input type="checkbox" id="mod-fastpass" checked class="w-4 h-4"> 
+                        <span>Allow Fast Pass</span>
+                    </label>
+                    <button onclick="sendNextQuestion()" class="ml-auto bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded font-bold">Send Question</button>
                 </div>
             </div>
-            <div class="w-64 p-4 flex flex-col justify-center">
-                <span class="text-sm font-semibold text-slate-300 mb-2">Master Audio Volume</span>
-                <input type="range" id="vol-master" min="0" max="100" value="100" class="w-full cursor-pointer">
+
+            <div class="w-80 p-4 flex flex-col justify-center space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold text-slate-300">Master Volume</span>
+                    <input type="range" id="vol-master" min="0" max="100" value="100" class="w-full">
+                </div>
             </div>
         </footer>
     </div>
 
     <script>
+        // --- STATE & CONFIG ---
         const BACKEND_URL = 'https://my-pub-quiz.onrender.com'; 
         const WS_URL = 'wss://my-pub-quiz.onrender.com/ws/master/';
         
-        // LOCALLY HOSTED AUDIO DIRECTORY
-        // You MUST put your MP3 files in a 'sounds' folder on Vercel
+        // LOCALLY HOSTED AUDIO DIRECTORY - ALL 20 FILES
         const buzzerSounds = {
             'sound1': new Audio('./sounds/buzzer1.mp3'),
             'sound2': new Audio('./sounds/buzzer2.mp3'),
@@ -151,7 +168,7 @@
             'sound19': new Audio('./sounds/buzzer19.mp3'),
             'sound20': new Audio('./sounds/buzzer20.mp3')
         };
-
+        
         let ws;
         let roomCode = "";
         let questions = [];
@@ -162,6 +179,7 @@
         let questionActive = false;
         let currentQuestionAudio = null;
 
+        // --- INIT ---
         document.getElementById('csv-upload').addEventListener('change', (e) => {
             Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, complete: (res) => {
                 questions = res.data;
@@ -170,18 +188,41 @@
             }});
         });
 
+        // --- AUTH & WEBSOCKET ---
         async function loginMaster() {
-            roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('dashboard-screen').classList.remove('hidden');
-            document.getElementById('room-code-display').innerText = roomCode;
-            connectWebSocket(roomCode);
+            const user = document.getElementById('host-user').value;
+            const pass = document.getElementById('host-pass').value;
+
+            try {
+                // This HTTP request wakes up the Render server
+                const res = await fetch(`${BACKEND_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                if (res.ok) {
+                    roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('dashboard-screen').classList.remove('hidden');
+                    document.getElementById('room-code-display').innerText = roomCode;
+                    connectWebSocket(roomCode);
+                } else {
+                    alert("Invalid Host Credentials");
+                }
+            } catch (err) {
+                alert("The backend server is waking up from sleep. Please wait 30 seconds and click Login again.");
+            }
         }
 
         function connectWebSocket(code) {
             ws = new WebSocket(`${WS_URL}${code}`);
+            
+            ws.onopen = () => console.log("Connected to room:", code);
+            
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
+                
                 if (data.type === "player_joined") {
                     if(!teamData[data.team_name]) {
                         teamData[data.team_name] = { score: 0, streak: 0, maxStreak: 0, wrongStreak: 0, fastAnswers: 0, hasFastPass: true, answeredCurrent: false, currentAnswerStatus: null };
@@ -193,13 +234,21 @@
                     processAnswer(data);
                 }
             };
+
+            ws.onclose = () => {
+                console.log("Disconnected. Retrying in 3s...");
+                setTimeout(() => connectWebSocket(code), 3000);
+            };
         }
 
+        // --- GAME LOGIC ---
         function prepareNextQuestion() {
             if (currentQuestionIndex + 1 < questions.length) {
                 const nq = questions[currentQuestionIndex + 1];
                 document.getElementById('nq-text').innerText = `${nq['Question number']}. ${nq['Question']}`;
                 document.getElementById('mod-points').value = nq['Points'] || 10;
+            } else {
+                document.getElementById('nq-text').innerText = "END OF QUIZ";
             }
         }
 
@@ -211,21 +260,23 @@
             questionActive = true;
             document.getElementById('btn-reveal').classList.add('hidden');
 
+            // Answer Formatting for Master Display
             let masterAnswerText = q['Correct answer'];
-            const opts = ['Answer A', 'Answer B', 'Answer C', 'Answer D', 'Answer E', 'Answer F'];
+            const optsNames = ['Answer A', 'Answer B', 'Answer C', 'Answer D', 'Answer E', 'Answer F'];
             
             if(masterAnswerText.includes('&')) {
                 let textParts = [];
                 masterAnswerText.split('&').forEach(letter => {
                     const idx = letter.charCodeAt(0) - 65;
-                    if(opts[idx] && q[opts[idx]]) textParts.push(q[opts[idx]]);
+                    if(q[optsNames[idx]]) textParts.push(q[optsNames[idx]]);
                 });
                 masterAnswerText = textParts.join(" AND ");
             } else if (masterAnswerText.length === 1 && masterAnswerText >= 'A' && masterAnswerText <= 'F') {
                 const idx = masterAnswerText.charCodeAt(0) - 65;
-                if(q[opts[idx]]) masterAnswerText = q[opts[idx]];
+                if(q[optsNames[idx]]) masterAnswerText = q[optsNames[idx]];
             }
 
+            // Update UI Center
             document.getElementById('current-question-container').classList.remove('hidden');
             document.getElementById('cq-text').innerText = q['Question'];
             document.getElementById('cq-answer').innerText = masterAnswerText;
@@ -240,12 +291,14 @@
                 mediaControls.classList.add('hidden');
             }
 
+            // Reset live team status
             for(let team in teamData) {
                 teamData[team].answeredCurrent = false;
                 teamData[team].currentAnswerStatus = null;
             }
             updateSidebars();
 
+            // Send via WS
             const payload = {
                 action: "send_question",
                 question_data: q,
@@ -267,24 +320,27 @@
             const tData = teamData[team_name];
             tData.answeredCurrent = true;
 
+            // Fast Pass Burn Logic
             let appliedMultiplier = 1;
             if (used_gamble && tData.hasFastPass) {
                 tData.hasFastPass = false; 
                 if (is_first) appliedMultiplier = parseInt(document.getElementById('fast-pass-mult').value);
             }
 
+            // Grading Logic
             const correctRaw = q['Correct answer'].toString().toUpperCase();
             const playerAns = answer.toString().toUpperCase();
             let isCorrect = false;
 
             if (correctRaw.includes('&')) {
-                const required = correctRaw.split('&').sort().join(',');
-                const provided = playerAns.split(',').sort().join(',');
-                isCorrect = (required === provided);
+                const req = correctRaw.split('&').sort().join(',');
+                const got = playerAns.split(',').sort().join(',');
+                isCorrect = (req === got);
             } else if (playerAns === correctRaw || playerAns === correctRaw.charAt(0)) {
                 isCorrect = true;
             }
 
+            // Scoring & Stats
             tData.currentAnswerStatus = isCorrect;
             const basePts = parseInt(document.getElementById('mod-points').value);
             
@@ -299,6 +355,7 @@
                     const bonusPct = parseInt(document.getElementById('fastest-bonus-pct').value) / 100;
                     ptsAwarded += Math.round(basePts * bonusPct);
                     
+                    // Play Buzzer
                     if (tData.buzzer && buzzerSounds[tData.buzzer.sound]) {
                         const audio = buzzerSounds[tData.buzzer.sound];
                         audio.volume = document.getElementById('vol-master').value / 100;
@@ -317,12 +374,14 @@
             const rawScores = extractScores();
             ws.send(JSON.stringify({ action: "update_scores", scores: rawScores }));
 
+            // Auto-end Logic
             if(document.getElementById('auto-end-toggle').checked) {
                 const allAnswered = Object.values(teamData).every(t => t.answeredCurrent);
                 if(allAnswered) stopTimerAndLock();
             }
         }
 
+        // --- UI & TIMERS ---
         function playQuestionAudio() {
             if(currentQuestionAudio) {
                 currentQuestionAudio.volume = document.getElementById('vol-master').value / 100;
@@ -378,10 +437,11 @@
             return s;
         }
 
+        // --- SIDEBAR TABS ---
         function switchTab(tab) {
-            document.getElementById('tab-teams').className = tab === 'teams' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
-            document.getElementById('tab-stats').className = tab === 'stats' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
-            document.getElementById('tab-settings').className = tab === 'settings' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
+            document.getElementById('tab-teams').className = tab === 'teams' ? 'flex-1 py-3 text-sm font-bold tab-active transition' : 'flex-1 py-3 text-sm font-bold bg-slate-800 transition text-slate-400';
+            document.getElementById('tab-stats').className = tab === 'stats' ? 'flex-1 py-3 text-sm font-bold tab-active transition' : 'flex-1 py-3 text-sm font-bold bg-slate-800 transition text-slate-400';
+            document.getElementById('tab-settings').className = tab === 'settings' ? 'flex-1 py-3 text-sm font-bold tab-active transition' : 'flex-1 py-3 text-sm font-bold bg-slate-800 transition text-slate-400';
             
             document.getElementById('content-teams').classList.toggle('hidden', tab !== 'teams');
             document.getElementById('content-stats').classList.toggle('hidden', tab !== 'stats');
@@ -397,25 +457,27 @@
             Object.keys(teamData).forEach(team => {
                 const d = teamData[team];
                 
+                // Live Status Panel
                 let statusIcon = '⏳';
                 if(d.answeredCurrent) {
                     statusIcon = d.currentAnswerStatus ? '✅' : '❌';
                 }
                 const fpIcon = d.hasFastPass ? '🎫' : '';
                 tCont.innerHTML += `
-                    <div class="flex justify-between items-center bg-slate-800 p-3 rounded">
+                    <div class="flex justify-between items-center bg-slate-800 p-3 rounded border-l-4 border-slate-600">
                         <span class="font-bold text-slate-200">${team} ${fpIcon}</span>
                         <span class="text-xl">${statusIcon}</span>
                     </div>`;
 
+                // Statistics Panel
                 sCont.innerHTML += `
                     <div class="bg-slate-800 p-3 rounded text-sm text-slate-300">
                         <div class="font-bold text-blue-400 text-base mb-1">${team} - ${d.score}pts</div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>Best Streak: <span class="text-white">${d.maxStreak}</span></div>
-                            <div>Cold: <span class="text-white">${d.wrongStreak}</span></div>
-                            <div>Fast Hits: <span class="text-white">${d.fastAnswers}</span></div>
-                            <div>Pass: <span class="text-${d.hasFastPass ? 'green' : 'red'}-400">${d.hasFastPass ? 'Yes' : 'Used'}</span></div>
+                            <div>Cold Streak: <span class="text-white">${d.wrongStreak}</span></div>
+                            <div>Fastest Hits: <span class="text-white">${d.fastAnswers}</span></div>
+                            <div>Fast Pass: <span class="text-${d.hasFastPass ? 'green' : 'red'}-400">${d.hasFastPass ? 'Available' : 'Used'}</span></div>
                         </div>
                     </div>`;
             });
