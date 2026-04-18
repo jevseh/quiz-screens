@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .tab-active { background-color: #1e293b; border-left: 4px solid #3b82f6; }
+        .tab-active { background-color: #1e293b; border-bottom: 2px solid #3b82f6; color: #60a5fa; }
         .hidden { display: none !important; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
@@ -42,39 +42,51 @@
 
         <div class="flex-1 flex overflow-hidden">
             <aside class="w-80 glass-panel border-r border-slate-700 flex flex-col">
-                <div class="flex border-b border-slate-700">
-                    <button onclick="switchTab('teams')" id="tab-teams" class="flex-1 py-3 text-sm font-bold tab-active">Live Status</button>
-                    <button onclick="switchTab('stats')" id="tab-stats" class="flex-1 py-3 text-sm font-bold bg-slate-800 text-slate-400">Statistics</button>
+                <div class="flex border-b border-slate-700 bg-slate-800">
+                    <button onclick="switchTab('teams')" id="tab-teams" class="flex-1 py-3 text-sm font-bold tab-active">Live</button>
+                    <button onclick="switchTab('stats')" id="tab-stats" class="flex-1 py-3 text-sm font-bold text-slate-400">Stats</button>
+                    <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 py-3 text-sm font-bold text-slate-400">Settings</button>
                 </div>
                 
                 <div id="content-teams" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
                 <div id="content-stats" class="hidden flex-1 overflow-y-auto p-4 space-y-4"></div>
+                
+                <div id="content-settings" class="hidden flex-1 overflow-y-auto p-4 space-y-6">
+                    <div class="bg-slate-800 p-4 rounded border border-slate-600">
+                        <h3 class="text-blue-400 font-bold mb-3 border-b border-slate-600 pb-2">Game Controls</h3>
+                        <label class="flex items-center space-x-3 mb-4 cursor-pointer">
+                            <input type="checkbox" id="auto-end-toggle" checked class="w-5 h-5"> 
+                            <span class="text-sm font-semibold text-slate-200">Auto-End when all answer</span>
+                        </label>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-semibold text-slate-300">Fast Pass Multiplier:</span> 
+                            <input type="number" id="fast-pass-mult" value="5" class="w-16 bg-slate-900 border border-slate-600 p-1 rounded text-center text-white">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold text-slate-300">Fastest Bonus %:</span> 
+                            <input type="number" id="fastest-bonus-pct" value="10" class="w-16 bg-slate-900 border border-slate-600 p-1 rounded text-center text-white">
+                        </div>
+                    </div>
+                </div>
             </aside>
 
             <main class="flex-1 flex flex-col relative">
-                
                 <div id="csv-overlay" class="absolute inset-0 bg-slate-900/90 z-20 flex flex-col items-center justify-center">
                     <h2 class="text-2xl font-bold mb-4">Upload Question Pack</h2>
                     <input type="file" id="csv-upload" accept=".csv" class="mb-4 block text-sm text-slate-400 file:py-3 file:px-6 file:rounded-full file:bg-blue-600 file:text-white">
                 </div>
 
-                <div class="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center relative">
-                    <div class="absolute top-4 right-4 glass-panel p-4 rounded-lg text-sm space-y-2 border border-slate-600">
-                        <label class="flex items-center space-x-2"><input type="checkbox" id="auto-end-toggle" checked> <span>Auto-End when all answer</span></label>
-                        <div class="flex items-center justify-between"><span>Fast Pass Multiplier:</span> <input type="number" id="fast-pass-mult" value="5" class="w-12 bg-slate-800 p-1 rounded text-center"></div>
-                        <div class="flex items-center justify-between"><span>Fastest Bonus %:</span> <input type="number" id="fastest-bonus-pct" value="10" class="w-12 bg-slate-800 p-1 rounded text-center"></div>
-                    </div>
-
-                    <div id="current-question-container" class="w-full max-w-4xl text-center hidden mt-12">
-                        <h2 id="cq-text" class="text-3xl font-black mb-4 text-white"></h2>
-                        <div id="cq-media-controls" class="mb-4 hidden space-x-4">
-                            <button onclick="playQuestionAudio()" class="bg-blue-600 px-4 py-2 rounded font-bold">▶ Play Audio</button>
+                <div class="flex-1 p-8 overflow-y-auto flex flex-col items-center justify-center">
+                    <div id="current-question-container" class="w-full max-w-4xl text-center hidden">
+                        <h2 id="cq-text" class="text-4xl font-black mb-6 text-white leading-tight"></h2>
+                        <div id="cq-media-controls" class="mb-6 hidden space-x-4">
+                            <button onclick="playQuestionAudio()" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-500">▶ Play Audio Track</button>
                         </div>
-                        <div id="cq-options" class="grid grid-cols-2 gap-4 mb-6"></div>
+                        <div id="cq-options" class="grid grid-cols-2 gap-4 mb-8"></div>
                         
                         <div class="glass-panel inline-block px-8 py-4 rounded-xl border border-slate-600">
                             <span class="text-slate-400 block mb-1 text-sm">Correct Answer</span>
-                            <span id="cq-answer" class="text-2xl font-bold text-green-400"></span>
+                            <span id="cq-answer" class="text-3xl font-bold text-green-400"></span>
                         </div>
                     </div>
                 </div>
@@ -93,20 +105,20 @@
             </main>
         </div>
 
-        <footer class="h-28 glass-panel border-t border-slate-700 flex">
-            <div class="flex-1 p-4 flex flex-col justify-center border-r border-slate-700">
-                <span class="text-xs text-slate-400 uppercase font-bold mb-1">Next Question</span>
-                <p id="nq-text" class="text-lg font-semibold text-slate-300 truncate">Load CSV...</p>
-                <div class="mt-2 flex space-x-4 text-sm items-center">
-                    <span>Timer: <input type="number" id="mod-time" value="30" class="w-16 bg-slate-800 rounded px-2 py-1">s</span>
-                    <span>Pts: <input type="number" id="mod-points" class="w-16 bg-slate-800 rounded px-2 py-1"></span>
-                    <label><input type="checkbox" id="mod-fastpass" checked> Allow Fast Pass</label>
-                    <button onclick="sendNextQuestion()" class="ml-auto bg-blue-600 hover:bg-blue-500 px-8 py-2 rounded font-bold">Send Question</button>
+        <footer class="h-auto min-h-[7rem] glass-panel border-t border-slate-700 flex flex-wrap">
+            <div class="flex-1 p-4 flex flex-col justify-center border-r border-slate-700 min-w-[300px]">
+                <span class="text-xs text-slate-400 uppercase font-bold mb-2">Next Question Preview</span>
+                <p id="nq-text" class="text-lg font-semibold text-slate-300 truncate mb-3">Load CSV...</p>
+                <div class="flex flex-wrap gap-4 text-sm items-center">
+                    <label class="flex items-center space-x-2"><span class="text-slate-400">Time (s):</span> <input type="number" id="mod-time" value="30" class="w-16 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white"></label>
+                    <label class="flex items-center space-x-2"><span class="text-slate-400">Pts:</span> <input type="number" id="mod-points" class="w-16 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white"></label>
+                    <label class="flex items-center space-x-2 text-slate-300 cursor-pointer"><input type="checkbox" id="mod-fastpass" checked class="w-4 h-4"> <span>Allow Fast Pass</span></label>
+                    <button onclick="sendNextQuestion()" class="ml-auto bg-blue-600 hover:bg-blue-500 px-8 py-2 rounded font-bold text-white shadow">Send Question</button>
                 </div>
             </div>
             <div class="w-64 p-4 flex flex-col justify-center">
-                <span class="text-sm font-semibold text-slate-300 mb-2">Master Volume</span>
-                <input type="range" id="vol-master" min="0" max="100" value="100" class="w-full">
+                <span class="text-sm font-semibold text-slate-300 mb-2">Master Audio Volume</span>
+                <input type="range" id="vol-master" min="0" max="100" value="100" class="w-full cursor-pointer">
             </div>
         </footer>
     </div>
@@ -115,38 +127,36 @@
         const BACKEND_URL = 'https://my-pub-quiz.onrender.com'; 
         const WS_URL = 'wss://my-pub-quiz.onrender.com/ws/master/';
         
-        // Buzzer Library
+        // LOCALLY HOSTED AUDIO DIRECTORY
+        // You MUST put your MP3 files in a 'sounds' folder on Vercel
         const buzzerSounds = {
-            'sound1': new Audio('https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg'),
-            'sound2': new Audio('https://actions.google.com/sounds/v1/bells/bell_ring.ogg'),
-            'sound3': new Audio('https://actions.google.com/sounds/v1/cartoon/buzzer.ogg'),
-            'sound4': new Audio('https://actions.google.com/sounds/v1/office/cash_register.ogg'),
-            'sound5': new Audio('https://actions.google.com/sounds/v1/animals/dog_barking.ogg'),
-            'sound6': new Audio('https://actions.google.com/sounds/v1/animals/cat_purring_close.ogg'),
-            'sound7': new Audio('https://actions.google.com/sounds/v1/impacts/glass_shatter.ogg'),
-            'sound8': new Audio('https://actions.google.com/sounds/v1/science_fiction/laser_pew.ogg'),
-            'sound9': new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg'),
-            'sound10': new Audio('https://actions.google.com/sounds/v1/animals/duck_quack.ogg'),
-            'sound11': new Audio('https://actions.google.com/sounds/v1/alarms/police_siren.ogg'),
-            'sound12': new Audio('https://actions.google.com/sounds/v1/cartoon/boing.ogg'),
-            'sound13': new Audio('https://actions.google.com/sounds/v1/crowds/crowd_cheer.ogg'),
-            'sound14': new Audio('https://actions.google.com/sounds/v1/foley/whip_crack.ogg'),
-            'sound15': new Audio('https://actions.google.com/sounds/v1/sports/referee_whistle.ogg'),
-            'sound16': new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_yeehaw.ogg'),
-            'sound17': new Audio('https://actions.google.com/sounds/v1/horror/zombie_moan.ogg'),
-            'sound18': new Audio('https://actions.google.com/sounds/v1/impacts/crash.ogg'),
-            'sound19': new Audio('https://actions.google.com/sounds/v1/foley/drum_roll.ogg'),
-            'sound20': new Audio('https://actions.google.com/sounds/v1/animals/crickets.ogg')
+            'sound1': new Audio('./sounds/buzzer1.mp3'),
+            'sound2': new Audio('./sounds/buzzer2.mp3'),
+            'sound3': new Audio('./sounds/buzzer3.mp3'),
+            'sound4': new Audio('./sounds/buzzer4.mp3'),
+            'sound5': new Audio('./sounds/buzzer5.mp3'),
+            'sound6': new Audio('./sounds/buzzer6.mp3'),
+            'sound7': new Audio('./sounds/buzzer7.mp3'),
+            'sound8': new Audio('./sounds/buzzer8.mp3'),
+            'sound9': new Audio('./sounds/buzzer9.mp3'),
+            'sound10': new Audio('./sounds/buzzer10.mp3'),
+            'sound11': new Audio('./sounds/buzzer11.mp3'),
+            'sound12': new Audio('./sounds/buzzer12.mp3'),
+            'sound13': new Audio('./sounds/buzzer13.mp3'),
+            'sound14': new Audio('./sounds/buzzer14.mp3'),
+            'sound15': new Audio('./sounds/buzzer15.mp3'),
+            'sound16': new Audio('./sounds/buzzer16.mp3'),
+            'sound17': new Audio('./sounds/buzzer17.mp3'),
+            'sound18': new Audio('./sounds/buzzer18.mp3'),
+            'sound19': new Audio('./sounds/buzzer19.mp3'),
+            'sound20': new Audio('./sounds/buzzer20.mp3')
         };
 
         let ws;
         let roomCode = "";
         let questions = [];
         let currentQuestionIndex = -1;
-        
-        // Advanced State Tracking
-        let teamData = {}; // Format: { score: 0, streak: 0, maxStreak: 0, wrongStreak: 0, fastAnswers: 0, hasFastPass: true, answeredCurrent: false, currentAnswerStatus: null, buzzer: null }
-        
+        let teamData = {}; 
         let timerInterval;
         let timeLeft = 0;
         let questionActive = false;
@@ -161,9 +171,6 @@
         });
 
         async function loginMaster() {
-            const user = document.getElementById('host-user').value;
-            const pass = document.getElementById('host-pass').value;
-            // Simulated login for POC
             roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('dashboard-screen').classList.remove('hidden');
@@ -204,11 +211,9 @@
             questionActive = true;
             document.getElementById('btn-reveal').classList.add('hidden');
 
-            // Set up actual Answer text for Master View (Issue 11)
             let masterAnswerText = q['Correct answer'];
             const opts = ['Answer A', 'Answer B', 'Answer C', 'Answer D', 'Answer E', 'Answer F'];
             
-            // If the correct answer is formatted like "A&B", extract the actual text for the master
             if(masterAnswerText.includes('&')) {
                 let textParts = [];
                 masterAnswerText.split('&').forEach(letter => {
@@ -225,7 +230,7 @@
             document.getElementById('cq-text').innerText = q['Question'];
             document.getElementById('cq-answer').innerText = masterAnswerText;
 
-            // Audio Setup (Issue 6)
+            // Audio Tracking Update
             currentQuestionAudio = null;
             const mediaControls = document.getElementById('cq-media-controls');
             if (q['Media LINK'] && (q['Media LINK'].includes('.mp3') || q['Media LINK'].includes('.ogg') || q['Media LINK'].includes('.wav'))) {
@@ -235,14 +240,12 @@
                 mediaControls.classList.add('hidden');
             }
 
-            // Reset team status for new round
             for(let team in teamData) {
                 teamData[team].answeredCurrent = false;
                 teamData[team].currentAnswerStatus = null;
             }
             updateSidebars();
 
-            // Send to phones
             const payload = {
                 action: "send_question",
                 question_data: q,
@@ -264,20 +267,17 @@
             const tData = teamData[team_name];
             tData.answeredCurrent = true;
 
-            // Fast Pass Burn Logic (Issue 4 & 10)
             let appliedMultiplier = 1;
             if (used_gamble && tData.hasFastPass) {
-                tData.hasFastPass = false; // Burned instantly
+                tData.hasFastPass = false; 
                 if (is_first) appliedMultiplier = parseInt(document.getElementById('fast-pass-mult').value);
             }
 
-            // Grading Logic (Handles A&B format)
             const correctRaw = q['Correct answer'].toString().toUpperCase();
             const playerAns = answer.toString().toUpperCase();
             let isCorrect = false;
 
             if (correctRaw.includes('&')) {
-                // E.g., player needs to submit "A,B" and correct is "A&B"
                 const required = correctRaw.split('&').sort().join(',');
                 const provided = playerAns.split(',').sort().join(',');
                 isCorrect = (required === provided);
@@ -285,7 +285,6 @@
                 isCorrect = true;
             }
 
-            // Scoring & Stats
             tData.currentAnswerStatus = isCorrect;
             const basePts = parseInt(document.getElementById('mod-points').value);
             
@@ -300,11 +299,10 @@
                     const bonusPct = parseInt(document.getElementById('fastest-bonus-pct').value) / 100;
                     ptsAwarded += Math.round(basePts * bonusPct);
                     
-                    // Play Buzzer on Master (Issue 12)
                     if (tData.buzzer && buzzerSounds[tData.buzzer.sound]) {
                         const audio = buzzerSounds[tData.buzzer.sound];
                         audio.volume = document.getElementById('vol-master').value / 100;
-                        audio.play().catch(e=>console.log("Buzzer blocked:", e));
+                        audio.play().catch(e=>console.log("Audio not found in /sounds/ folder."));
                     }
                 }
                 tData.score += ptsAwarded;
@@ -316,12 +314,9 @@
 
             updateSidebars();
             
-            // Extract raw scores for players
-            const rawScores = {};
-            for(let t in teamData) rawScores[t] = teamData[t].score;
+            const rawScores = extractScores();
             ws.send(JSON.stringify({ action: "update_scores", scores: rawScores }));
 
-            // Auto-end Logic
             if(document.getElementById('auto-end-toggle').checked) {
                 const allAnswered = Object.values(teamData).every(t => t.answeredCurrent);
                 if(allAnswered) stopTimerAndLock();
@@ -332,7 +327,7 @@
             if(currentQuestionAudio) {
                 currentQuestionAudio.volume = document.getElementById('vol-master').value / 100;
                 currentQuestionAudio.currentTime = 0;
-                currentQuestionAudio.play();
+                currentQuestionAudio.play().catch(e => alert("Audio file link not found or blocked."));
             }
         }
 
@@ -353,12 +348,11 @@
         function stopTimerAndLock() {
             clearInterval(timerInterval);
             questionActive = false;
-            ws.send(JSON.stringify({ action: "end_question" })); // Tells phones to lock out
+            ws.send(JSON.stringify({ action: "end_question" })); 
             document.getElementById('btn-reveal').classList.remove('hidden');
         }
 
         function revealAnswers() {
-            // Sends signal to phones to highlight right/wrong (Issue 2)
             const q = questions[currentQuestionIndex];
             ws.send(JSON.stringify({ action: "reveal_answer", correct: q['Correct answer'] }));
         }
@@ -368,6 +362,16 @@
             ws.send(JSON.stringify({ action: "trigger_break", leaderboard: extractScores() }));
         }
 
+        function declareWinner() {
+            if(confirm("DOUBLE CONFIRMATION: Are you sure you want to end the quiz and declare a winner?")) {
+                const scores = extractScores();
+                const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+                const winner = sorted.length > 0 ? sorted[0][0] : "No One";
+                if(ws) ws.send(JSON.stringify({ action: "declare_winner", winner: winner }));
+                alert(`Quiz Ended! Winner is ${winner}`);
+            }
+        }
+
         function extractScores() {
             let s = {};
             for(let k in teamData) s[k] = teamData[k].score;
@@ -375,10 +379,13 @@
         }
 
         function switchTab(tab) {
-            document.getElementById('tab-teams').className = tab === 'teams' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold bg-slate-800 text-slate-400';
-            document.getElementById('tab-stats').className = tab === 'stats' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold bg-slate-800 text-slate-400';
+            document.getElementById('tab-teams').className = tab === 'teams' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
+            document.getElementById('tab-stats').className = tab === 'stats' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
+            document.getElementById('tab-settings').className = tab === 'settings' ? 'flex-1 py-3 text-sm font-bold tab-active' : 'flex-1 py-3 text-sm font-bold text-slate-400';
+            
             document.getElementById('content-teams').classList.toggle('hidden', tab !== 'teams');
             document.getElementById('content-stats').classList.toggle('hidden', tab !== 'stats');
+            document.getElementById('content-settings').classList.toggle('hidden', tab !== 'settings');
             updateSidebars();
         }
 
@@ -390,10 +397,8 @@
             Object.keys(teamData).forEach(team => {
                 const d = teamData[team];
                 
-                // Live Status Panel
                 let statusIcon = '⏳';
                 if(d.answeredCurrent) {
-                    // Show ✅ or ❌ immediately for Master (Issue 9)
                     statusIcon = d.currentAnswerStatus ? '✅' : '❌';
                 }
                 const fpIcon = d.hasFastPass ? '🎫' : '';
@@ -403,15 +408,14 @@
                         <span class="text-xl">${statusIcon}</span>
                     </div>`;
 
-                // Statistics Panel (Issue 8)
                 sCont.innerHTML += `
                     <div class="bg-slate-800 p-3 rounded text-sm text-slate-300">
                         <div class="font-bold text-blue-400 text-base mb-1">${team} - ${d.score}pts</div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>Best Streak: <span class="text-white">${d.maxStreak}</span></div>
-                            <div>Cold Streak: <span class="text-white">${d.wrongStreak}</span></div>
-                            <div>Fastest Hits: <span class="text-white">${d.fastAnswers}</span></div>
-                            <div>Fast Pass: <span class="text-${d.hasFastPass ? 'green' : 'red'}-400">${d.hasFastPass ? 'Available' : 'Used'}</span></div>
+                            <div>Cold: <span class="text-white">${d.wrongStreak}</span></div>
+                            <div>Fast Hits: <span class="text-white">${d.fastAnswers}</span></div>
+                            <div>Pass: <span class="text-${d.hasFastPass ? 'green' : 'red'}-400">${d.hasFastPass ? 'Yes' : 'Used'}</span></div>
                         </div>
                     </div>`;
             });
