@@ -12,14 +12,10 @@
         .color-btn.taken { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
         .ans-btn { transition: all 0.2s ease; }
         .ans-btn.selected { background-color: #3b82f6; border-color: #60a5fa; transform: scale(0.98); }
-        
-        /* Reveal Answer Styles */
         .ans-btn.correct-reveal { background-color: #22c55e !important; border-color: #16a34a !important; color: white !important; }
         .ans-btn.wrong-reveal { background-color: #ef4444 !important; border-color: #dc2626 !important; opacity: 0.6; }
         .text-correct-reveal { border-color: #22c55e !important; color: #22c55e !important; }
-
         .seq-badge { position: absolute; top: -10px; right: -10px; background: #fbbf24; color: black; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid #0f172a; }
-        
         @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         .animate-slide { animation: slideIn 0.4s ease-out forwards; }
         #progress-bar { transition: width 1s linear; }
@@ -29,41 +25,21 @@
 
     <div id="login-screen" class="flex-1 overflow-y-auto p-6 flex flex-col items-center">
         <h1 class="text-4xl font-black mt-8 mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 text-center">JOIN QUIZ</h1>
-        
         <div class="w-full max-w-sm space-y-4">
             <input type="text" id="room-code" placeholder="4-Letter Room Code" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-600 text-center text-xl font-bold uppercase tracking-widest outline-none focus:border-blue-500">
             <input type="text" id="team-name" placeholder="Team Name" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-600 text-center text-xl font-bold outline-none focus:border-blue-500">
             <button onclick="checkRoomAndLoadBuzzers()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-xl mt-4 transition">Next step: Pick Buzzer</button>
         </div>
-
         <div id="buzzer-setup" class="w-full max-w-sm mt-8 hidden flex-col items-center pb-12">
             <h3 class="text-lg font-bold mb-4 text-slate-300">1. Pick Team Color</h3>
             <div id="color-grid" class="grid grid-cols-5 gap-3 mb-8 w-full"></div>
-
             <h3 class="text-lg font-bold mb-4 text-slate-300">2. Pick Buzzer Sound</h3>
             <select id="sound-select" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-600 font-bold mb-8 text-white outline-none focus:border-blue-500">
-                <option value="sound1">Bugle Tune</option>
-                <option value="sound2">Bell Ring</option>
-                <option value="sound3">Game Buzzer</option>
-                <option value="sound4">Cash Register</option>
-                <option value="sound5">Dog Bark</option>
-                <option value="sound6">Cat Meow</option>
-                <option value="sound7">Glass Shatter</option>
-                <option value="sound8">Laser Pew</option>
-                <option value="sound9">Magic Chime</option>
-                <option value="sound10">Duck Quack</option>
-                <option value="sound11">Police Siren</option>
-                <option value="sound12">Spring Boing</option>
-                <option value="sound13">Crowd Cheer</option>
-                <option value="sound14">Whip Crack</option>
-                <option value="sound15">Referee Whistle</option>
-                <option value="sound16">Yeehaw</option>
-                <option value="sound17">Zombie Moan</option>
-                <option value="sound18">Crash</option>
-                <option value="sound19">Drum Roll</option>
-                <option value="sound20">Crickets</option>
+                <option value="sound1">Sound 1</option><option value="sound2">Sound 2</option><option value="sound3">Sound 3</option><option value="sound4">Sound 4</option><option value="sound5">Sound 5</option>
+                <option value="sound6">Sound 6</option><option value="sound7">Sound 7</option><option value="sound8">Sound 8</option><option value="sound9">Sound 9</option><option value="sound10">Sound 10</option>
+                <option value="sound11">Sound 11</option><option value="sound12">Sound 12</option><option value="sound13">Sound 13</option><option value="sound14">Sound 14</option><option value="sound15">Sound 15</option>
+                <option value="sound16">Sound 16</option><option value="sound17">Sound 17</option><option value="sound18">Sound 18</option><option value="sound19">Sound 19</option><option value="sound20">Sound 20</option>
             </select>
-
             <button onclick="joinGame()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black text-xl py-4 rounded-xl shadow-lg shadow-blue-500/50">ENTER GAME</button>
         </div>
     </div>
@@ -80,27 +56,29 @@
             </div>
         </header>
 
-        <div id="waiting-state" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
-            <div class="animate-pulse w-24 h-24 mb-6 rounded-full border-4 border-blue-500 flex items-center justify-center">
+        <div id="waiting-state" class="flex-1 flex flex-col items-center justify-center p-6 text-center w-full">
+            <div id="waiting-spinner" class="animate-pulse w-24 h-24 mb-6 rounded-full border-4 border-blue-500 flex items-center justify-center">
                 <span class="text-4xl">⏳</span>
             </div>
-            <h2 class="text-2xl font-bold text-slate-300 mb-2">Waiting for Quizmaster</h2>
-            <p class="text-slate-500">Eyes on the big screen!</p>
+            <h2 id="waiting-text" class="text-2xl font-bold text-slate-300 mb-2">Waiting for Quizmaster</h2>
+            <p id="waiting-subtext" class="text-slate-500 mb-6">Eyes on the big screen!</p>
+            
+            <div id="player-leaderboard" class="hidden w-full max-w-sm bg-slate-800 rounded-xl border border-slate-700 p-4 shadow-xl">
+                <h3 class="text-xl font-black mb-4 text-blue-400 border-b border-slate-700 pb-2">Current Standings</h3>
+                <div id="leaderboard-list" class="space-y-3 text-left"></div>
+            </div>
         </div>
 
         <main id="question-state" class="hidden flex-1 flex flex-col p-4 overflow-y-auto">
             <div class="w-full bg-slate-800 h-2 rounded-full mb-6 overflow-hidden">
                 <div id="progress-bar" class="bg-blue-500 h-full w-full"></div>
             </div>
-
             <div class="flex justify-between items-end mb-4">
                 <span id="q-number" class="text-slate-400 font-bold text-xl"></span>
                 <button id="fastpass-btn" onclick="toggleFastPass()" class="hidden bg-purple-600 px-4 py-2 rounded-lg text-xs font-black tracking-wider shadow shadow-purple-900/50 transition">⚡ FAST PASS</button>
             </div>
-            
             <h2 id="q-text" class="text-2xl font-black mb-4 leading-snug"></h2>
             <div id="q-media" class="mb-6 rounded-lg overflow-hidden flex justify-center"></div>
-
             <div id="input-area" class="flex-1 flex flex-col space-y-3 pb-24"></div>
         </main>
 
@@ -135,12 +113,11 @@
         let currentQuestion = null;
         let currentSelections = [];
         let isFastPassActive = false;
-        let hasFastPassRemaining = true; // Tracks the one-shot item
+        let hasFastPassRemaining = true; 
         let teamRank = 1;
         
         const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#ffffff', '#94a3b8', '#fbbf24', '#34d399', '#818cf8'];
 
-        // Init Colors
         const colorGrid = document.getElementById('color-grid');
         colors.forEach(color => {
             const btn = document.createElement('div');
@@ -153,13 +130,10 @@
         async function checkRoomAndLoadBuzzers() {
             roomCode = document.getElementById('room-code').value.toUpperCase();
             teamName = document.getElementById('team-name').value.trim();
-
             if(roomCode.length !== 4 || teamName === "") { alert("Valid 4-letter code and team name required."); return; }
-
             try {
                 const res = await fetch(`${BACKEND_URL}/api/room/${roomCode}`);
                 const data = await res.json();
-
                 if(data.status === "exists") {
                     const takenColors = Object.values(data.unavailable_buzzers).map(b => b.color);
                     document.querySelectorAll('.color-btn').forEach(btn => {
@@ -192,12 +166,10 @@
 
         function connectWebSocket() {
             ws = new WebSocket(`${WS_URL}${roomCode}/${encodeURIComponent(teamName)}`);
-
             ws.onopen = () => {
                 ws.send(JSON.stringify({ action: "select_buzzer", color: selectedColor, sound: selectedSound }));
                 setInterval(() => { if(ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({action: "heartbeat"})); }, 15000);
             };
-
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if (data.type === "new_question") {
@@ -209,7 +181,7 @@
                 } else if (data.type === "reveal_answer") {
                     highlightAnswers(data.correct);
                 } else if (data.type === "break_started") {
-                    showWaitingState("Take a break! Check the leaderboard.");
+                    showBreakLeaderboard(data.leaderboard);
                 } else if (data.type === "break_ended") {
                     showWaitingState("Break over. Get ready!");
                 } else if (data.type === "quiz_ended") {
@@ -231,7 +203,31 @@
             document.getElementById('submitted-overlay').classList.add('hidden');
             document.getElementById('locked-overlay').classList.add('hidden');
             document.getElementById('waiting-state').classList.remove('hidden');
-            document.getElementById('waiting-state').querySelector('h2').innerText = msg;
+            document.getElementById('waiting-text').innerText = msg;
+            document.getElementById('waiting-subtext').classList.remove('hidden');
+            document.getElementById('waiting-spinner').classList.remove('hidden');
+            document.getElementById('player-leaderboard').classList.add('hidden');
+        }
+
+        function showBreakLeaderboard(scores) {
+            showWaitingState("Time for a break!");
+            document.getElementById('waiting-subtext').classList.add('hidden');
+            document.getElementById('waiting-spinner').classList.add('hidden');
+            
+            const lbContainer = document.getElementById('player-leaderboard');
+            const lbList = document.getElementById('leaderboard-list');
+            lbContainer.classList.remove('hidden');
+            lbList.innerHTML = "";
+            
+            const sortedTeams = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            sortedTeams.forEach(([team, score], index) => {
+                const rankColors = index === 0 ? 'text-yellow-400' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-amber-600' : 'text-slate-400';
+                lbList.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700">
+                        <span class="font-bold ${rankColors}">${index + 1}. ${team}</span>
+                        <span class="font-black text-white">${score}</span>
+                    </div>`;
+            });
         }
 
         function renderQuestion(q, customTime, allowFastPass) {
@@ -248,7 +244,6 @@
             document.getElementById('q-number').innerText = `Q${q['Question number']}`;
             document.getElementById('q-text').innerText = q['Question'];
 
-            // Fast Pass Logic (Issue 10)
             const fpBtn = document.getElementById('fastpass-btn');
             if(teamRank > 3 && hasFastPassRemaining && allowFastPass) {
                 fpBtn.classList.remove('hidden');
@@ -258,7 +253,6 @@
                 fpBtn.classList.add('hidden');
             }
 
-            // Image to phone logic (Issue 5)
             const mediaDiv = document.getElementById('q-media');
             if(q['Media LINK'] && (q['Media LINK'].includes('.jpg') || q['Media LINK'].includes('.png') || q['Media LINK'].includes('.gif'))) {
                 mediaDiv.innerHTML = `<img src="${q['Media LINK']}" class="w-full h-auto rounded-lg shadow-md border-2 border-slate-700">`;
@@ -281,14 +275,13 @@
                     btn.className = 'ans-btn w-full p-4 rounded-xl bg-slate-800 border-2 border-slate-700 text-left font-semibold text-lg relative animate-slide';
                     btn.style.animationDelay = `${index * 0.05}s`;
                     btn.innerText = opt;
-                    btn.dataset.letter = String.fromCharCode(65 + index); // A, B, C...
+                    btn.dataset.letter = String.fromCharCode(65 + index); 
                     
                     if(qType.includes('sequence')) btn.onclick = () => handleSequenceClick(btn, btn.dataset.letter);
                     else btn.onclick = () => handleMultipleChoiceClick(btn, btn.dataset.letter);
                     inputArea.appendChild(btn);
                 });
             }
-
             startTimer(customTime);
         }
 
@@ -343,24 +336,18 @@
             if (qType.includes('text') || qType.includes('math')) {
                 finalAnswer = document.getElementById('text-answer').value.trim();
             } else {
-                // Sends back A,B or A&B
                 finalAnswer = currentSelections.join(","); 
             }
 
             if(finalAnswer === "" && currentSelections.length === 0) return;
 
-            // Burn fast pass locally if used
             if(isFastPassActive) {
                 hasFastPassRemaining = false;
                 document.getElementById('fastpass-btn').classList.add('hidden');
             }
 
             if(ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    action: "submit_answer",
-                    answer: finalAnswer,
-                    used_gamble: isFastPassActive
-                }));
+                ws.send(JSON.stringify({ action: "submit_answer", answer: finalAnswer, used_gamble: isFastPassActive }));
             }
             document.getElementById('submitted-overlay').classList.remove('hidden');
         }
@@ -372,7 +359,6 @@
         }
 
         function highlightAnswers(correctStr) {
-            // Remove overlays so players can see the answer
             document.getElementById('locked-overlay').classList.add('hidden');
             document.getElementById('submitted-overlay').classList.add('hidden');
             document.getElementById('controls-footer').classList.add('hidden');
@@ -387,20 +373,15 @@
                 return;
             }
 
-            // Multiple choice / Sequence reveal
             const requiredLetters = correctStr.includes('&') ? correctStr.split('&') : correctStr.split('');
             
             document.querySelectorAll('.ans-btn').forEach(btn => {
                 const letter = btn.dataset.letter;
-                
                 if (requiredLetters.includes(letter)) {
-                    // This was a correct answer
                     btn.classList.add('correct-reveal');
                 } else if (btn.classList.contains('selected')) {
-                    // They selected it, but it was wrong
                     btn.classList.add('wrong-reveal');
                 } else {
-                    // Not selected, not correct
                     btn.style.opacity = '0.3';
                 }
             });
@@ -410,7 +391,7 @@
             const bar = document.getElementById('progress-bar');
             bar.style.transition = 'none';
             bar.style.width = '100%';
-            void bar.offsetWidth; // Force reflow
+            void bar.offsetWidth; 
             bar.style.transition = `width ${seconds}s linear`;
             bar.style.width = '0%';
         }
